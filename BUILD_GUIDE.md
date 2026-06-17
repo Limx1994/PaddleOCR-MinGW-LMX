@@ -5,11 +5,13 @@
 如果你只想运行 OCR，不需要编译：
 
 1. 下载预编译归档：
+   
    ```
    https://github.com/Limx1994/PaddleOCR-MinGW-LMX/releases/download/v1.0.0/PaddleOCR-MinGW-v1.0.0.tar.gz
    ```
 
 2. 解压后直接运行：
+   
    ```batch
    cd dist\ppocr
    ppocr.exe ocr --input <图片路径> ^
@@ -129,10 +131,18 @@ PaddleOCR-MinGW-LMX/
 │   └── opencv-4.7.0/       # OpenCV 源码
 ├── toolchain/              # MinGW GCC 工具链
 │   └── mingw/              # GCC 11.2+
+├── libs/                   # 预编译库
+│   ├── paddle_inference_gcc/  # Paddle 推理库（含 oneDNN）
+│   ├── opencv_install_gcc/    # OpenCV 库
+│   └── onednn_install_gcc/    # oneDNN (MKLDNN) 库
 ├── libs_upload/            # 预编译库头文件
 ├── scripts/                # 构建脚本
 ├── release/                # 预编译归档
 ├── dist/ppocr/             # 运行时文件
+│   ├── ppocr.exe           # 可执行文件（360MB，静态链接）
+│   ├── configs/            # OCR 配置文件
+│   ├── models/             # OCR 模型
+│   └── *.dll               # 运行时 DLL
 └── test_images/            # 测试数据
 ```
 
@@ -141,6 +151,7 @@ PaddleOCR-MinGW-LMX/
 ### Q: 编译失败，提示找不到 third_party
 
 A: 需要下载 Paddle 的第三方依赖：
+
 ```batch
 cd src\Paddle
 git clone https://github.com/PaddlePaddle/Paddle-third_party.git third_party
@@ -157,6 +168,7 @@ A: 运行时添加 `--run_mode mkldnn` 参数。注意：对 mobile 模型可能
 ### Q: 如何修改代码并重新编译？
 
 A: 
+
 1. 修改源码（PaddleOCR/ 或 src/Paddle/）
 2. 重新运行对应的构建脚本
 3. 重新编译 PaddleOCR
@@ -165,10 +177,10 @@ A:
 
 测试环境：Intel CPU, 20 逻辑处理器, PP-OCRv4_mobile 模型
 
-| 模式 | 单张图片 | 10 张图片 |
-|------|---------|----------|
-| paddle (默认) | 1.61s | 1.63s |
-| mkldnn | 1.68s | 3.55s |
+| 模式          | 单张图片  | 10 张图片 |
+| ----------- | ----- | ------ |
+| paddle (默认) | 1.61s | 1.63s  |
+| mkldnn      | 1.68s | 3.55s  |
 
 ## 技术栈
 

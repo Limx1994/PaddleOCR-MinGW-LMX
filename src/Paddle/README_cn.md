@@ -32,17 +32,25 @@ pip install paddlepaddle-gpu
 
 ### 使用 MinGW 从源码构建（Windows）
 
-使用 LLVM/Clang MinGW 和 Ninja 在 Windows 上构建 PaddlePaddle 推理库：
+使用 MinGW GCC 11.2+ 和 Ninja 在 Windows 上构建 PaddlePaddle 推理库：
 
 ```sh
 git clone https://github.com/PaddlePaddle/Paddle.git
 cd Paddle
-mkdir build_mingw && cd build_mingw
-cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DON_INFER=ON -DWITH_GPU=OFF -DWITH_PYTHON=OFF -DWITH_MKL=OFF -DWITH_AVX=OFF
-ninja
+mkdir build_gcc && cd build_gcc
+cmake .. -G Ninja ^
+  -DCMAKE_C_COMPILER=<工具链路径>/mingw/bin/gcc.exe ^
+  -DCMAKE_CXX_COMPILER=<工具链路径>/mingw/bin/g++.exe ^
+  -DCMAKE_MAKE_PROGRAM=<工具链路径>/mingw/bin/ninja.exe ^
+  -DCMAKE_BUILD_TYPE=Release ^
+  -DON_INFER=ON -DWITH_GPU=OFF -DWITH_PYTHON=OFF ^
+  -DWITH_MKL=OFF -DWITH_ONEDNN=ON -DWITH_AVX=ON ^
+  -DCMAKE_CXX_FLAGS="-Wa,-mbig-obj -g0 -O2" ^
+  -DCMAKE_C_FLAGS="-Wa,-mbig-obj -g0 -O2"
+ninja -j16
 ```
 
-前置依赖：[LLVM MinGW](https://github.com/mstorsjo/llvm-mingw) 工具链和 [Ninja](https://ninja-build.org/) 构建系统。
+前置依赖：[MinGW GCC](https://www.mingw-w64.org/) 11.2+ 工具链和 [Ninja](https://ninja-build.org/) 构建系统。`-Wa,-mbig-obj` 参数用于处理大型 COFF 段。
 
 MinGW 构建常用 CMake 选项：
 
@@ -52,9 +60,9 @@ MinGW 构建常用 CMake 选项：
 | `WITH_GPU`     | OFF | NVIDIA GPU 支持（需要 CUDA）    |
 | `WITH_PYTHON`  | OFF | Python 绑定                 |
 | `WITH_MKL`     | OFF | Intel MKL（关闭时使用 OpenBLAS） |
-| `WITH_AVX`     | OFF | AVX 指令集                   |
+| `WITH_AVX`     | ON  | AVX 指令集                   |
 | `WITH_TESTING` | OFF | 构建单元测试                    |
-| `WITH_ONEDNN`  | OFF | oneDNN 支持                 |
+| `WITH_ONEDNN`  | ON  | oneDNN (MKLDNN) 加速         |
 
 更多安装信息详见官网 [安装说明](https://www.paddlepaddle.org.cn/install/quick)
 

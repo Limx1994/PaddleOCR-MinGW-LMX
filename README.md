@@ -22,9 +22,11 @@ D:\tmp\tmp\
 │   ├── paddle_toolchain.cmake
 │   └── merge_libs.mri      # 静态库合并脚本
 ├── dist/ppocr/             # 运行时分发包
-│   ├── ppocr.exe           # 可执行文件（370MB，静态链接）
+│   ├── ppocr.exe           # 可执行文件（360MB，静态链接）
+│   ├── configs/            # OCR 配置文件
 │   ├── *.dll               # 运行时 DLL
 │   └── models/             # OCR 模型
+├── release/                # 预编译归档
 └── test_images/            # 测试数据
 ```
 
