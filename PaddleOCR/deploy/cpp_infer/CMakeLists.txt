@@ -134,11 +134,11 @@ if(MINGW)
     # MinGW specific flags
     add_definitions(-DGOOGLE_GLOG_DLL_DECL=)
     set(FLAG_OPENMP "-fopenmp")
-    # Use detected CPU SIMD flags
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g1 -O1 -Wa,-mbig-obj ${CPU_SIMD_FLAGS} ${FLAG_OPENMP} -std=c++11")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g1 -O1 -Wa,-mbig-obj ${CPU_SIMD_FLAGS} ${FLAG_OPENMP}")
-    # Allow multiple definitions for merged static library
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--allow-multiple-definition")
+    # Use detected CPU SIMD flags with optimized settings
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g0 -O2 -DNDEBUG -Wa,-mbig-obj -ffunction-sections -fdata-sections ${CPU_SIMD_FLAGS} ${FLAG_OPENMP} -std=c++11")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g0 -O2 -DNDEBUG -Wa,-mbig-obj -ffunction-sections -fdata-sections ${CPU_SIMD_FLAGS} ${FLAG_OPENMP}")
+    # Allow multiple definitions for merged static library + strip unused sections
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--allow-multiple-definition -Wl,--gc-sections")
     if (WITH_STATIC_LIB)
         add_definitions(-DSTATIC_LIB)
         add_definitions(-DYAML_CPP_STATIC_DEFINE)

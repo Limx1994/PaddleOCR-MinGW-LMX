@@ -43,7 +43,7 @@ if errorlevel 1 (
 
 echo.
 echo [Step 2] Building with Ninja...
-"%ROOT_DIR%\toolchain\mingw\bin\ninja.exe" -j12
+"%ROOT_DIR%\toolchain\mingw\bin\ninja.exe" -j16
 
 if errorlevel 1 (
     echo Build failed!
