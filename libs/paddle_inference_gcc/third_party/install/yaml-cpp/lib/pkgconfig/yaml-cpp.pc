@@ -1,0 +1,11 @@
+prefix=D:/tmp/tmp/src/Paddle/build_gcc_onednn10/third_party/install/yaml-cpp
+exec_prefix=${prefix}
+includedir=D:/tmp/tmp/src/Paddle/build_gcc_onednn10/third_party/install/yaml-cpp/include
+libdir=D:/tmp/tmp/src/Paddle/build_gcc_onednn10/third_party/install/yaml-cpp/lib
+
+Name: Yaml-cpp
+Description: A YAML parser and emitter for C++
+Version: 0.8.0
+Requires:
+Libs: -L${libdir} -lyaml-cpp
+Cflags: -I${includedir}

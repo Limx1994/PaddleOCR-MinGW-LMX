@@ -1,0 +1,6 @@
+open libpaddle_inference.a
+delete cpu_allocator.cc.obj
+delete system_allocator.cc.obj
+delete allocator_facade.cc.obj
+save
+end

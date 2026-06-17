@@ -1,0 +1,14 @@
+open libpaddle_inference.a
+delete analysis_predictor.cc.obj
+delete interpreter_util.cc.obj
+delete pir_interpreter.cc.obj
+delete program_interpreter.cc.obj
+delete memory_utils.cc.obj
+delete init.cc.obj
+delete cpu_allocator.cc.obj
+delete system_allocator.cc.obj
+delete allocator_facade.cc.obj
+delete stats.cc.obj
+delete os_info.cc.obj
+save
+end

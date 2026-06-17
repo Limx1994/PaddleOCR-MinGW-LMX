@@ -1,0 +1,4 @@
+open libpaddle_inference.a
+delete analysis_predictor.cc.obj
+save
+end

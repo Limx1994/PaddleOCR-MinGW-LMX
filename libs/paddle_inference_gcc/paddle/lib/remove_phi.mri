@@ -1,0 +1,5 @@
+open libpaddle_inference.a
+delete stats.cc.obj
+delete os_info.cc.obj
+save
+end
