@@ -1,0 +1,28 @@
+# Build artifacts
+src/Paddle/build*/
+*.o
+*.obj
+*.a
+*.lib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+*.bak
+
+# CLAUDE.md (private)
+CLAUDE.md
+
+# Large source directories (keep only essential)
+src/Paddle/.git/
+src/opencv-4.7.0/.git/
+PaddleOCR/.git/

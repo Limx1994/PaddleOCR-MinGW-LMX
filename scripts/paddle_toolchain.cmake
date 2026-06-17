@@ -1,0 +1,6 @@
+set(CMAKE_SYSTEM_NAME Windows)
+set(MINGW_ROOT "${CMAKE_CURRENT_LIST_DIR}/../toolchain/mingw")
+set(CMAKE_C_COMPILER "${MINGW_ROOT}/bin/gcc.exe")
+set(CMAKE_CXX_COMPILER "${MINGW_ROOT}/bin/g++.exe")
+set(CMAKE_MAKE_PROGRAM "${MINGW_ROOT}/bin/ninja.exe" CACHE FILEPATH "Ninja path" FORCE)
+set(CMAKE_RC_COMPILER "${MINGW_ROOT}/bin/windres.exe")
