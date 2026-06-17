@@ -20,11 +20,11 @@ cd /d "%BUILD_DIR%"
 echo.
 echo [Step 1] Running CMake configuration...
 cmake "%SOURCE_DIR%" ^
-    -G "MinGW Makefiles" ^
+    -G "Ninja" ^
     -DCMAKE_C_COMPILER="%MINGW_DIR%/bin/gcc.exe" ^
     -DCMAKE_CXX_COMPILER="%MINGW_DIR%/bin/g++.exe" ^
     -DCMAKE_BUILD_TYPE=Release ^
-    -DCMAKE_MAKE_PROGRAM="%MINGW_DIR%/bin/mingw32-make.exe" ^
+    -DCMAKE_MAKE_PROGRAM="%MINGW_DIR%/bin/ninja.exe" ^
     -DPADDLE_LIB="%PADDLE_LIB%" ^
     -DOPENCV_DIR="%OPENCV_DIR%" ^
     -DWITH_MKL=OFF ^
@@ -39,7 +39,7 @@ if errorlevel 1 (
 
 echo.
 echo [Step 2] Building...
-"%MINGW_DIR%/bin/mingw32-make.exe" -j12
+"%MINGW_DIR%/bin/ninja.exe" -j16
 
 if errorlevel 1 (
     echo Build failed!

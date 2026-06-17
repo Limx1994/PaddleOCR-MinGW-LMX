@@ -35,17 +35,25 @@ pip install paddlepaddle-gpu
 
 ### Build from Source with MinGW (Windows)
 
-Build PaddlePaddle inference library on Windows using LLVM/Clang MinGW and Ninja:
+Build PaddlePaddle inference library on Windows using MinGW GCC 11.2+ and Ninja:
 
 ``` sh
 git clone https://github.com/PaddlePaddle/Paddle.git
 cd Paddle
-mkdir build_mingw && cd build_mingw
-cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DON_INFER=ON -DWITH_GPU=OFF -DWITH_PYTHON=OFF -DWITH_MKL=OFF -DWITH_AVX=OFF
-ninja
+mkdir build_gcc && cd build_gcc
+cmake .. -G Ninja \
+  -DCMAKE_C_COMPILER=<path-to-toolchain>/mingw/bin/gcc.exe \
+  -DCMAKE_CXX_COMPILER=<path-to-toolchain>/mingw/bin/g++.exe \
+  -DCMAKE_MAKE_PROGRAM=<path-to-toolchain>/mingw/bin/ninja.exe \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DON_INFER=ON -DWITH_GPU=OFF -DWITH_PYTHON=OFF \
+  -DWITH_MKL=OFF -DWITH_ONEDNN=ON -DWITH_AVX=ON \
+  -DCMAKE_CXX_FLAGS="-Wa,-mbig-obj -g0 -O2" \
+  -DCMAKE_C_FLAGS="-Wa,-mbig-obj -g0 -O2"
+ninja -j16
 ```
 
-Prerequisites: [LLVM MinGW](https://github.com/mstorsjo/llvm-mingw) toolchain and [Ninja](https://ninja-build.org/) build system.
+Prerequisites: [MinGW GCC](https://www.mingw-w64.org/) 11.2+ toolchain and [Ninja](https://ninja-build.org/) build system. The `-Wa,-mbig-obj` flag is required for large COFF sections.
 
 Key CMake options for MinGW builds:
 
@@ -55,9 +63,9 @@ Key CMake options for MinGW builds:
 | `WITH_GPU` | OFF | NVIDIA GPU support (requires CUDA) |
 | `WITH_PYTHON` | OFF | Python bindings |
 | `WITH_MKL` | OFF | Intel MKL (uses OpenBLAS if OFF) |
-| `WITH_AVX` | OFF | AVX intrinsics |
+| `WITH_AVX` | ON | AVX intrinsics |
 | `WITH_TESTING` | OFF | Build unit tests |
-| `WITH_ONEDNN` | OFF | oneDNN support |
+| `WITH_ONEDNN` | ON | oneDNN (MKLDNN) acceleration |
 
 For more information about installation, please view [Quick Install](https://www.paddlepaddle.org.cn/install/quick)
 

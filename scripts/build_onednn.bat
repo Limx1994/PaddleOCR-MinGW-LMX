@@ -45,8 +45,8 @@ cmake -G Ninja ^
     -DCMAKE_MAKE_PROGRAM=%MINGW_ROOT%\bin\ninja.exe ^
     -DCMAKE_BUILD_TYPE=Release ^
     -DCMAKE_INSTALL_PREFIX=%ONEDNN_INSTALL% ^
-    -DCMAKE_C_FLAGS="-Wa,-mbig-obj -O2" ^
-    -DCMAKE_CXX_FLAGS="-Wa,-mbig-obj -O2" ^
+    -DCMAKE_C_FLAGS="-Wa,-mbig-obj -g0 -O2 -DNDEBUG" ^
+    -DCMAKE_CXX_FLAGS="-Wa,-mbig-obj -g0 -O2 -DNDEBUG" ^
     -DDNNL_CPU_RUNTIME=OMP ^
     -DDNNL_BUILD_TESTS=OFF ^
     -DDNNL_BUILD_EXAMPLES=OFF ^
@@ -62,7 +62,7 @@ if errorlevel 1 (
 :: 构建
 echo.
 echo Building oneDNN...
-ninja -j12
+ninja -j16
 
 if errorlevel 1 (
     echo ERROR: Build failed.

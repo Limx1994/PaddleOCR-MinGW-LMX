@@ -202,7 +202,7 @@ ReadImage::Apply(std::vector<cv::Mat> &input, const void *param_ptr) const {
     switch (format_) {
     case Format::BGR:
       if (img.channels() == 3) {
-        converted = img.clone();
+        converted = img;  // shallow copy, cv::Mat uses refcount
       } else if (img.channels() == 1) {
         cv::cvtColor(img, converted, cv::COLOR_GRAY2BGR);
       } else {
@@ -226,7 +226,7 @@ ReadImage::Apply(std::vector<cv::Mat> &input, const void *param_ptr) const {
       if (img.channels() == 3) {
         cv::cvtColor(img, converted, cv::COLOR_BGR2GRAY);
       } else if (img.channels() == 1) {
-        converted = img.clone();
+        converted = img;  // shallow copy, cv::Mat uses refcount
       } else {
         return absl::InvalidArgumentError("Image at index " +
                                           std::to_string(i) +
@@ -254,8 +254,6 @@ ReadImage::StringToFormat(const std::string &format) {
 
 absl::StatusOr<std::vector<cv::Mat>>
 ToCHWImage::operator()(const std::vector<cv::Mat> &imgs_batch) {
-  std::vector<std::vector<cv::Mat>> chw_imgs_batch;
-
   std::vector<cv::Mat> chw_imgs;
   for (const auto &img : imgs_batch) {
     if (img.empty()) {
@@ -266,18 +264,34 @@ ToCHWImage::operator()(const std::vector<cv::Mat> &imgs_batch) {
           "Input image must have 3 channels (HWC format)!");
     }
 
-    cv::Mat chw_img(3, img.rows * img.cols, CV_32F);
-    float *ptr = chw_img.ptr<float>();
+    // Optimized HWC -> CHW using direct memory access
+    const int h = img.rows;
+    const int w = img.cols;
+    const int area = h * w;
+    cv::Mat chw_img(3, area, CV_32F);
+    float *dst = chw_img.ptr<float>();
 
-    for (int h = 0; h < img.rows; ++h) {
-      for (int w = 0; w < img.cols; ++w) {
-        const cv::Vec3b &pixel = img.at<cv::Vec3b>(h, w);
-        ptr[0 * img.total() + h * img.cols + w] = pixel[0];
-        ptr[1 * img.total() + h * img.cols + w] = pixel[1];
-        ptr[2 * img.total() + h * img.cols + w] = pixel[2];
+    if (img.isContinuous()) {
+      const uchar *src = img.ptr<uchar>();
+      for (int i = 0; i < area; ++i) {
+        dst[0 * area + i] = static_cast<float>(src[i * 3 + 0]);
+        dst[1 * area + i] = static_cast<float>(src[i * 3 + 1]);
+        dst[2 * area + i] = static_cast<float>(src[i * 3 + 2]);
+      }
+    } else {
+      for (int r = 0; r < h; ++r) {
+        const uchar *row = img.ptr<uchar>(r);
+        for (int c = 0; c < w; ++c) {
+          int idx = r * w + c;
+          dst[0 * area + idx] = static_cast<float>(row[c * 3 + 0]);
+          dst[1 * area + idx] = static_cast<float>(row[c * 3 + 1]);
+          dst[2 * area + idx] = static_cast<float>(row[c * 3 + 2]);
+        }
       }
     }
 
+    std::vector<int> shape = {3, h, w};
+    chw_img = chw_img.reshape(1, shape);
     chw_imgs.push_back(chw_img);
   }
 
@@ -302,6 +316,8 @@ Normalize::Normalize(float scale, const float &mean, const float &std)
 }
 
 absl::StatusOr<cv::Mat> Normalize::NormalizeOne(const cv::Mat &image) const {
+  INFOD("NormalizeOne: input %dx%d ch=%d depth=%d", image.cols, image.rows,
+        image.channels(), image.depth());
   if (image.empty()) {
     return absl::InvalidArgumentError("Input image is empty.");
   }
@@ -315,16 +331,17 @@ absl::StatusOr<cv::Mat> Normalize::NormalizeOne(const cv::Mat &image) const {
   if (image.depth() == CV_8U) {
     image.convertTo(input, CV_32F);
   } else {
-    input = image.clone(); // note origin type is CV_8U
+    input = image;  // shallow copy for CV_32F, avoid unnecessary clone
   }
   if (input.channels() == CHANNEL) {
-    cv::Mat processed = input;
-    std::vector<cv::Mat> channels(input.channels());
-    cv::split(processed, channels);
-
-    for (int c = 0; c < input.channels(); ++c) {
+    // Optimized per-channel normalization using split/multiply/add
+    // Avoid unnecessary clone by operating directly on converted input
+    std::vector<cv::Mat> channels(CHANNEL);
+    cv::split(input, channels);
+    for (int c = 0; c < CHANNEL; ++c) {
       channels[c] = channels[c] * alpha_[c] + beta_[c];
     }
+    cv::Mat processed;
     cv::merge(channels, processed);
     return processed;
   } else { // dims >= 3
@@ -382,19 +399,16 @@ absl::StatusOr<cv::Mat> NormalizeImage::Normalize(const cv::Mat &img) const {
   if (img.depth() == CV_8U) {
     img.convertTo(input, CV_32F);
   } else {
-    input = img.clone();
+    input = img;  // shallow copy for CV_32F, avoid unnecessary clone
   }
 
-  cv::Mat processed = input;
-
+  // Optimized per-channel normalization using split/multiply/add
   std::vector<cv::Mat> channels(CHANNEL);
-
-  cv::split(processed, channels);
-
+  cv::split(input, channels);
   for (int c = 0; c < CHANNEL; ++c) {
     channels[c] = channels[c] * alpha_[c] + beta_[c];
   }
-
+  cv::Mat processed;
   cv::merge(channels, processed);
   return processed;
 }
@@ -455,13 +469,32 @@ ToCHWImage::Apply(std::vector<cv::Mat> &input, const void *param) const {
           "Input image must have 3 channels (HWC format)!");
     }
 
-    std::vector<cv::Mat> vec_split = {};
-    cv::split(img, vec_split);
-    cv::Mat chw_img;
-    for (auto &split : vec_split)
-      split = split.reshape(1, 1);
-    cv::hconcat(vec_split, chw_img);
-    std::vector<int> shape = {img.channels(), img.size[0], img.size[1]};
+    // Optimized HWC -> CHW conversion using direct memory copy
+    const int h = img.rows;
+    const int w = img.cols;
+    const int area = h * w;
+    std::vector<int> shape = {3, h, w};
+    cv::Mat chw_img(3, area, CV_32F);
+
+    if (img.depth() == CV_32F) {
+      // Input is already float, copy directly
+      const float *src = img.ptr<float>();
+      float *dst = chw_img.ptr<float>();
+      for (int i = 0; i < area; ++i) {
+        dst[0 * area + i] = src[i * 3 + 0];
+        dst[1 * area + i] = src[i * 3 + 1];
+        dst[2 * area + i] = src[i * 3 + 2];
+      }
+    } else {
+      // Input is CV_8U, convert on the fly
+      const uchar *src = img.ptr<uchar>();
+      float *dst = chw_img.ptr<float>();
+      for (int i = 0; i < area; ++i) {
+        dst[0 * area + i] = static_cast<float>(src[i * 3 + 0]);
+        dst[1 * area + i] = static_cast<float>(src[i * 3 + 1]);
+        dst[2 * area + i] = static_cast<float>(src[i * 3 + 2]);
+      }
+    }
     chw_img = chw_img.reshape(1, shape);
     chw_imgs.push_back(chw_img);
   }
@@ -490,6 +523,9 @@ ToBatch::operator()(const std::vector<cv::Mat> &imgs) const {
   std::vector<int> sizes = {batch, rows, cols, channels};
   cv::Mat out(4, sizes.data(), CV_32F);
 
+  // Calculate stride for each batch element
+  const int img_size = rows * cols * channels;
+
   for (int b = 0; b < batch; ++b) {
     cv::Mat img_float;
     if (imgs[b].depth() != CV_32F) {
@@ -498,25 +534,19 @@ ToBatch::operator()(const std::vector<cv::Mat> &imgs) const {
       img_float = imgs[b];
     }
 
-    for (int r = 0; r < rows; ++r) {
-      for (int c = 0; c < cols; ++c) {
-        if (channels == 1) {
-          float v = img_float.at<float>(r, c);
-          int idx[4] = {b, r, c, 0};
-          out.at<float>(idx) = v;
-        } else if (channels == 3) {
-          cv::Vec3f v = img_float.at<cv::Vec3f>(r, c);
-          for (int ch = 0; ch < 3; ++ch) {
-            int idx[4] = {b, r, c, ch};
-            out.at<float>(idx) = v[ch];
-          }
-        } else {
-          const float *pix = img_float.ptr<float>(r, c);
-          for (int ch = 0; ch < channels; ++ch) {
-            int idx[4] = {b, r, c, ch};
-            out.at<float>(idx) = pix[ch];
-          }
-        }
+    // Direct memory copy using continuous memory layout
+    // out shape: [batch, rows, cols, channels] - same as HWC per image
+    if (img_float.isContinuous()) {
+      // Calculate destination pointer for this batch element
+      float *dst = reinterpret_cast<float*>(out.data) + b * img_size;
+      const float *src = img_float.ptr<float>();
+      memcpy(dst, src, img_size * sizeof(float));
+    } else {
+      // Fallback for non-continuous matrices
+      float *dst = reinterpret_cast<float*>(out.data) + b * img_size;
+      for (int r = 0; r < rows; ++r) {
+        const float *row = img_float.ptr<float>(r);
+        memcpy(dst + r * cols * channels, row, cols * channels * sizeof(float));
       }
     }
   }

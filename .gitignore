@@ -2,8 +2,10 @@
 src/Paddle/build*/
 *.o
 *.obj
-*.a
 *.lib
+
+# Allow .a files in libs/ directory (tracked by Git LFS)
+!libs/**/*.a
 
 # IDE
 .vscode/

@@ -149,21 +149,12 @@ PaddleInfer::Apply(const std::vector<cv::Mat> &x) {
     exit(-1);
   }
 
-  std::vector<std::vector<float>> outputs;
   std::vector<int> output_shape = {};
-  for (auto &output_handle : output_handles_) {
-    output_shape = output_handle->shape();
-    size_t numel = 1;
-    for (auto dim : output_shape)
-      numel *= dim;
-    std::vector<float> out_data(numel);
-    output_handle->CopyToCpu(out_data.data());
-    outputs.push_back(std::move(out_data));
-  }
-  auto size_v = outputs[0].size();
+  // Direct CopyToCpu into cv::Mat, avoiding intermediate vector allocation
+  output_shape = output_handles_[0]->shape();
+  INFOD("PaddleInfer: direct CopyToCpu, output dims=%d", (int)output_shape.size());
   cv::Mat pred(output_shape.size(), output_shape.data(), CV_32F);
-  memcpy(pred.ptr<float>(), outputs[0].data(),
-         outputs[0].size() * sizeof(float));
+  output_handles_[0]->CopyToCpu(pred.ptr<float>());
   std::vector<cv::Mat> pred_outputs = {pred};
   return pred_outputs;
 };
