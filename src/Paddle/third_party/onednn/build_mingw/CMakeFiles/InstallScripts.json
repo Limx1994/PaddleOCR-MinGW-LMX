@@ -1,0 +1,20 @@
+{
+	"InstallScripts" : 
+	[
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/src/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/src/common/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/src/cpu/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/src/cpu/x64/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/src/graph/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/src/graph/interface/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/src/graph/backend/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/src/graph/backend/fake/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/src/graph/backend/dnnl/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/src/graph/backend/graph_compiler/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/src/graph/utils/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/examples/cmake_install.cmake",
+		"D:/tmp/tmp/src/Paddle/third_party/onednn/build_mingw/tests/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
