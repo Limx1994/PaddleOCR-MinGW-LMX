@@ -9,6 +9,21 @@ set PADDLE_LIB=%ROOT_DIR%\libs\paddle_inference_gcc
 set OPENCV_DIR=%ROOT_DIR%\libs\opencv_install_gcc
 set SOURCE_DIR=%SCRIPT_DIR%
 
+:: 查找 cmake：优先 toolchain，回退系统 PATH
+set CMAKE_EXE=%ROOT_DIR%\toolchain\mingw\bin\cmake.exe
+if not exist "%CMAKE_EXE%" (
+    where cmake.exe >nul 2>&1
+    if errorlevel 1 (
+        echo ERROR: cmake.exe not found in toolchain or system PATH.
+        echo Please install CMake and add it to PATH.
+        exit /b 1
+    )
+    for /f "delims=" %%i in ('where cmake.exe') do set CMAKE_EXE=%%i
+    echo [INFO] Using system cmake: %CMAKE_EXE%
+) else (
+    echo [INFO] Using toolchain cmake: %CMAKE_EXE%
+)
+
 :: 检查是否使用 DLL 模式
 set USE_DLL=OFF
 set USE_STATIC=ON
@@ -69,7 +84,7 @@ cd /d "%BUILD_DIR%"
 
 echo.
 echo [Step 1] Running CMake configuration...
-cmake "%SOURCE_DIR%" ^
+"%CMAKE_EXE%" "%SOURCE_DIR%" ^
     -G "Ninja" ^
     -DCMAKE_C_COMPILER="%MINGW_DIR%/bin/gcc.exe" ^
     -DCMAKE_CXX_COMPILER="%MINGW_DIR%/bin/g++.exe" ^
@@ -81,7 +96,8 @@ cmake "%SOURCE_DIR%" ^
     -DWITH_GPU=OFF ^
     -DWITH_STATIC_LIB=%USE_STATIC% ^
     -DWITH_DLL_LIB=%USE_DLL% ^
-    -DUSE_FREETYPE=OFF
+    -DUSE_FREETYPE=OFF ^
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 
 if errorlevel 1 (
     echo CMake configuration failed!
