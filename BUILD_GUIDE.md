@@ -181,7 +181,7 @@ A: 这是正常的，构建脚本已添加 `-Wl,--allow-multiple-definition` 解
 
 ### Q: 如何启用 oneDNN 加速？
 
-A: 运行时添加 `--run_mode mkldnn` 参数。注意：对 mobile 模型可能不会更快。
+A: MKLDNN 默认已启用（`--enable_mkldnn true`）。如需禁用以提升 mobile 模型速度，使用 `--enable_mkldnn false`。
 
 ### Q: 如何修改代码并重新编译？
 

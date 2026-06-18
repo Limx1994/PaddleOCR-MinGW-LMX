@@ -84,10 +84,9 @@ ppocr.exe ocr \
   --use_textline_orientation false
 ```
 
-**Inference modes** (`--run_mode`):
-- `paddle` — Native Paddle mode (default, faster for mobile models)
-- `mkldnn` — oneDNN acceleration (may help for larger models)
-- `mkldnn_bf16` — oneDNN with BF16 precision (requires CPU support)
+**Inference modes** (`--enable_mkldnn`):
+- `--enable_mkldnn true` — oneDNN acceleration enabled (default)
+- `--enable_mkldnn false` — Native Paddle mode (faster for mobile models)
 
 **Pipeline parallelism** (`--thread_num`):
 - Default: 4 (processes multiple images concurrently)

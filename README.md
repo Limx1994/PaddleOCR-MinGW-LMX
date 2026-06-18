@@ -153,7 +153,7 @@ build_mingw.bat
 | `--text_recognition_model_dir`   | 文字识别模型目录     | 空                   |
 | `--text_detection_model_name`    | 检测模型名称       | PP-OCRv5_server_det |
 | `--text_recognition_model_name`  | 识别模型名称       | PP-OCRv5_server_rec |
-| `--run_mode`                     | 推理模式         | paddle              |
+| `--enable_mkldnn`                | 启用 MKLDNN 加速 | true                |
 | `--thread_num`                   | Pipeline 并行数 | 4                   |
 | `--cpu_threads`                  | CPU 线程数      | 8                   |
 | `--use_doc_orientation_classify` | 是否使用文档方向分类   | true                |
@@ -164,9 +164,8 @@ build_mingw.bat
 
 **推理模式说明：**
 
-- `paddle` — 原生 Paddle 模式，对 mobile 模型更快（默认）
-- `mkldnn` — oneDNN 加速模式，对 server 模型可能有益
-- `mkldnn_bf16` — oneDNN BF16 模式（需要 CPU 支持）
+- `--enable_mkldnn true` — 启用 oneDNN 加速（默认）
+- `--enable_mkldnn false` — 禁用 oneDNN，使用原生 Paddle 模式（对 mobile 模型更快）
 
 ## 模型说明
 
