@@ -1,16 +1,16 @@
 ## OpenCV: Open Source Computer Vision Library
 
-> **本项目构建说明**: 此 OpenCV 4.7.0 源码在 PaddleOCR-MinGW 项目中使用 MinGW GCC 11.2+ 编译。预编译版本位于 `libs/opencv_install_gcc/`。构建命令：
+> **本项目构建说明**: 此 OpenCV 4.7.0 源码在 PaddleOCR-MinGW 项目中使用 MinGW GCC 11.2.0 编译。预编译版本位于 `libs/opencv_install_gcc/`。构建命令：
 > ```batch
 > cd src\opencv-4.7.0
 > mkdir build && cd build
 > cmake .. -G "MinGW Makefiles" ^
->   -DCMAKE_C_COMPILER=D:\tmp\tmp\toolchain\mingw\bin\gcc.exe ^
->   -DCMAKE_CXX_COMPILER=D:\tmp\tmp\toolchain\mingw\bin\g++.exe ^
->   -DCMAKE_INSTALL_PREFIX=D:\tmp\tmp\libs\opencv_install_gcc ^
+>   -DCMAKE_C_COMPILER=..\..\..\toolchain\mingw\bin\gcc.exe ^
+>   -DCMAKE_CXX_COMPILER=..\..\..\toolchain\mingw\bin\g++.exe ^
+>   -DCMAKE_INSTALL_PREFIX=..\..\..\libs\opencv_install_gcc ^
 >   -DBUILD_SHARED_LIBS=ON
-> mingw32-make -j12
-> mingw32-make install
+> ..\..\..\toolchain\mingw\bin\mingw32-make.exe -j12
+> ..\..\..\toolchain\mingw\bin\mingw32-make.exe install
 > ```
 
 ### Resources

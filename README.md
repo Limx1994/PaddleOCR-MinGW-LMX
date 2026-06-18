@@ -2,34 +2,51 @@
 
 基于 PaddlePaddle 的 C++ OCR 推理引擎，使用 MinGW GCC 编译，支持中英文文字识别。
 
+## 前置要求
+
+- **Git LFS**：大文件（.a, .dll, .exe, .pdiparams）使用 Git LFS 跟踪，克隆前必须安装：
+  ```batch
+  git lfs install
+  ```
+- **CMake 3.15+**：需在系统 PATH 中（工具链不含 cmake）
+- **Windows 10/11**
+
 ## 目录结构
 
 ```
-D:\tmp\tmp\
+PaddleOCR-MinGW-LMX/
 ├── PaddleOCR/              # OCR 源代码（Python + C++）
 ├── src/                    # 框架源码
 │   ├── Paddle/             # PaddlePaddle 框架源码
 │   └── opencv-4.7.0/       # OpenCV 源码
 ├── toolchain/              # 编译工具链
-│   └── mingw/              # MinGW GCC 11.2+
-├── libs/                   # 预编译库
+│   └── mingw/              # MinGW GCC 11.2.0（含 gcc/g++/ninja/ar）
+├── libs/                   # 预编译库（Git LFS 跟踪）
 │   ├── paddle_inference_gcc/  # Paddle 推理库（含 oneDNN）
 │   ├── opencv_install_gcc/    # OpenCV 库
 │   └── onednn_install_gcc/    # oneDNN (MKLDNN) 库
+├── libs_upload/            # 预编译库头文件（用于分发）
 ├── scripts/                # 构建脚本
 │   ├── build_paddle.bat    # 编译 Paddle（含 oneDNN）
+│   ├── build_paddle_dll.bat # 编译 Paddle（DLL 模式）
 │   ├── build_onednn.bat    # 编译 oneDNN
-│   ├── paddle_toolchain.cmake
-│   └── merge_libs.mri      # 静态库合并脚本
+│   └── distribute_dll.bat  # 分发 DLL 到运行目录
 ├── dist/ppocr/             # 运行时分发包
 │   ├── ppocr.exe           # 可执行文件（2.2MB，DLL 模式）
-│   ├── configs/            # OCR 配置文件
 │   ├── *.dll               # 运行时 DLL
-│   └── models/             # OCR 模型
+│   └── models/             # OCR 模型（.json 格式）
 └── test_images/            # 测试数据
 ```
 
 ## 快速开始
+
+### 克隆仓库
+
+```batch
+git lfs install
+git clone https://github.com/Limx1994/PaddleOCR-MinGW-LMX.git
+cd PaddleOCR-MinGW-LMX
+```
 
 ### 运行 OCR 识别
 
@@ -60,8 +77,9 @@ ppocr.exe ocr --input ..\..\test_images\test.jpg ^
 ### 环境要求
 
 - Windows 10/11
-- MinGW GCC 11.2+（已包含在 `toolchain/mingw/`）
-- CMake 3.15+（支持 CMake 4.x）
+- Git LFS（克隆前安装：`git lfs install`）
+- MinGW GCC 11.2.0（已包含在 `toolchain/mingw/`）
+- CMake 3.15+（支持 CMake 4.x，需在系统 PATH 中）
 - Ninja（已包含在 MinGW 工具链中）
 
 ### 编译 oneDNN（可选，加速推理）
@@ -148,6 +166,7 @@ build_mingw.bat
 | 参数                               | 说明           | 默认值                 |
 | -------------------------------- | ------------ | ------------------- |
 | `--input`                        | 输入图片路径       | 必填                  |
+| `--save_path`                    | 结果保存路径       | ./output/           |
 | `--text_detection_model_dir`     | 文字检测模型目录     | 空                   |
 | `--text_recognition_model_dir`   | 文字识别模型目录     | 空                   |
 | `--text_detection_model_name`    | 检测模型名称       | PP-OCRv5_server_det |
@@ -160,6 +179,12 @@ build_mingw.bat
 | `--use_textline_orientation`     | 是否使用文本行方向分类  | true                |
 | `--device`                       | 推理设备         | cpu                 |
 | `--precision`                    | 计算精度         | fp32                |
+| `--text_det_limit_side_len`      | 检测图像边长限制    | 64                  |
+| `--text_det_thresh`              | 检测像素阈值       | 0.3                 |
+| `--text_det_box_thresh`          | 检测框阈值        | 0.6                 |
+| `--text_det_unclip_ratio`        | 文本区域扩展系数    | 1.5                 |
+| `--text_rec_score_thresh`        | 识别分数阈值       | 0                   |
+| `--mkldnn_cache_capacity`        | MKLDNN 缓存容量  | 10                  |
 
 **推理模式说明：**
 
@@ -168,22 +193,28 @@ build_mingw.bat
 
 ## 模型说明
 
-本项目使用 PP-OCRv4 移动端模型：
+本项目默认使用 PP-OCRv4 移动端模型：
 
 | 模型                  | 用途   | 大小    |
 | ------------------- | ---- | ----- |
 | PP-OCRv4_mobile_det | 文字检测 | 4.8MB |
 | PP-OCRv4_mobile_rec | 文字识别 | 11MB  |
 
+**模型文件格式**：PaddlePaddle 3.0 支持两种格式：
+- `.json` + `.pdiparams`（新格式，推荐）
+- `.pdmodel` + `.pdiparams`（旧格式，兼容）
+
 如需使用其他模型，下载后放入 `dist/ppocr/models/` 目录，并在命令行指定对应的模型名称。
 
 ## 已知问题
 
+- **Git LFS**：大文件（.a, .dll, .exe, .pdiparams）使用 Git LFS 跟踪，克隆前必须安装 Git LFS
 - **大文件编译**：需要 `-Wa,-mbig-obj` 参数处理大型 COFF 段
 - **符号冲突**：合并静态库时需要 `-Wl,--allow-multiple-definition`
 - **TLS 析构崩溃**：已通过 immortal singleton + char[] buffer 模式解决
 - **DLL 共享库**：已通过 4-DLL 拆分模式解决（common/pir/phi_core/paddle_inference）
 - **CMake 4.x 兼容性**：需要 `-DCMAKE_POLICY_VERSION_MINIMUM=3.5`
+- **GCC 版本兼容**：GCC 11.2.0 编译的预编译库不能用 GCC 16.1.0 的运行时库链接
 
 ## 性能数据
 
@@ -212,4 +243,4 @@ build_mingw.bat
 - PaddleOCR：Apache License 2.0
 - PaddlePaddle：Apache License 2.0
 - OpenCV：Apache License 2.0
-- MinGW版本作者：迁旭
+- MinGW 版本作者：迁旭

@@ -19,26 +19,27 @@ This document describes how to build and run the PaddleOCR C++ inference engine 
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| MinGW GCC | 11.2.0+ | gcc, g++, mingw32-make |
-| CMake | 3.14+ | Build system generator (supports CMake 4.x) |
-| Paddle Inference | Latest | GCC-compiled version (with oneDNN) |
-| OpenCV | 4.7.0 | GCC-compiled version |
-| oneDNN | 3.6.2 | Optional, for MKLDNN acceleration |
+| Git LFS | Latest | Large file tracking (install before clone) |
+| MinGW GCC | 11.2.0+ | gcc, g++, mingw32-make (included in toolchain/) |
+| CMake | 3.15+ | Build system generator (must be in PATH) |
+| Paddle Inference | Latest | GCC-compiled version (included in libs/) |
+| OpenCV | 4.7.0 | GCC-compiled version (included in libs/) |
+| oneDNN | 3.6.2 | Optional, for MKLDNN acceleration (included in libs/) |
 
 ## Build Steps
 
-1. **Configure paths** in `build_mingw.bat`:
+1. **Clone repository** (requires Git LFS):
 
    ```batch
-   set MINGW_DIR=D:\path\to\mingw
-   set PADDLE_LIB=D:\path\to\paddle_inference_gcc
-   set OPENCV_DIR=D:\path\to\opencv_install_gcc
+   git lfs install
+   git clone https://github.com/Limx1994/PaddleOCR-MinGW-LMX.git
+   cd PaddleOCR-MinGW-LMX
    ```
 
 2. **Run build**:
 
    ```batch
-   cd deploy\cpp_infer
+   cd PaddleOCR\deploy\cpp_infer
    build_mingw.bat
    ```
 
@@ -70,17 +71,16 @@ Output: `build_mingw_dll\ppocr.exe` (2.2MB, requires DLLs in runtime directory)
 
 ### General OCR
 
-```bash
+```batch
 cd dist\ppocr
 
-ppocr.exe ocr \
-  --input <image_path> \
-  --text_detection_model_dir ./models/PP-OCRv4_mobile_det_infer \
-  --text_detection_model_name PP-OCRv4_mobile_det \
-  --text_recognition_model_dir ./models/PP-OCRv4_mobile_rec_infer \
-  --text_recognition_model_name PP-OCRv4_mobile_rec \
-  --use_doc_orientation_classify false \
-  --use_doc_unwarping false \
+ppocr.exe ocr --input <image_path> ^
+  --text_detection_model_dir ./models/PP-OCRv4_mobile_det_infer ^
+  --text_detection_model_name PP-OCRv4_mobile_det ^
+  --text_recognition_model_dir ./models/PP-OCRv4_mobile_rec_infer ^
+  --text_recognition_model_name PP-OCRv4_mobile_rec ^
+  --use_doc_orientation_classify false ^
+  --use_doc_unwarping false ^
   --use_textline_orientation false
 ```
 
@@ -96,18 +96,17 @@ ppocr.exe ocr \
 
 The same PP-OCRv4 models can recognize license plates (Chinese province abbreviations + letters + digits):
 
-```bash
-FLAGS_enable_memory_stats=false FLAGS_allocator_strategy=auto_growth \
-./ppocr.exe ocr \
-  --input <plate_image> \
-  --text_detection_model_dir ./models/ch_PP-OCRv4_det_infer \
-  --text_detection_model_name PP-OCRv4_mobile_det \
-  --text_recognition_model_dir ./models/ch_PP-OCRv4_rec_infer \
-  --text_recognition_model_name PP-OCRv4_mobile_rec \
-  --use_doc_orientation_classify false \
-  --use_doc_unwarping false \
-  --use_textline_orientation false \
-  --cpu_threads 4
+```batch
+cd dist\ppocr
+
+ppocr.exe ocr --input <plate_image> ^
+  --text_detection_model_dir ./models/PP-OCRv4_mobile_det_infer ^
+  --text_detection_model_name PP-OCRv4_mobile_det ^
+  --text_recognition_model_dir ./models/PP-OCRv4_mobile_rec_infer ^
+  --text_recognition_model_name PP-OCRv4_mobile_rec ^
+  --use_doc_orientation_classify false ^
+  --use_doc_unwarping false ^
+  --use_textline_orientation false
 ```
 
 Example output (license plate: `赣G·0522Y`):
@@ -120,27 +119,28 @@ Example output (license plate: `赣G·0522Y`):
 
 ## Model Preparation
 
-Download PP-OCRv4 models and place them in `build_mingw/models/`:
+Download PP-OCRv4 models and place them in `dist/ppocr/models/`:
 
 ```
-build_mingw/models/
-├── ch_PP-OCRv4_det_infer/              # Text detection model
-│   ├── inference.pdmodel
-│   ├── inference.pdiparams
-│   └── inference.yml
-├── ch_PP-OCRv4_rec_infer/              # Text recognition model
-│   ├── inference.pdmodel
-│   ├── inference.pdiparams
-│   └── inference.yml
+dist/ppocr/models/
+├── PP-OCRv4_mobile_det_infer/          # Text detection model
+│   ├── inference.json                  # or inference.pdmodel
+│   └── inference.pdiparams
+├── PP-OCRv4_mobile_rec_infer/          # Text recognition model
+│   ├── inference.json                  # or inference.pdmodel
+│   └── inference.pdiparams
 └── PP-LCNet_x1_0_textline_ori_infer/   # Text line orientation classifier (optional)
-    ├── inference.pdmodel
-    ├── inference.pdiparams
-    └── inference.yml
+    ├── inference.json                  # or inference.pdmodel
+    └── inference.pdiparams
 ```
+
+**Model file format**: PaddlePaddle 3.0 supports two formats:
+- `.json` + `.pdiparams` (new format, recommended)
+- `.pdmodel` + `.pdiparams` (old format, compatible)
 
 **Download links:**
-- Text detection: [ch_PP-OCRv4_det_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/ch_PP-OCRv4_det_infer.tar)
-- Text recognition: [ch_PP-OCRv4_rec_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/ch_PP-OCRv4_rec_infer.tar)
+- Text detection: [PP-OCRv4_mobile_det_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv4_mobile_det_infer.tar)
+- Text recognition: [PP-OCRv4_mobile_rec_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv4_mobile_rec_infer.tar)
 - Text line orientation: [PP-LCNet_x1_0_textline_ori_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-LCNet_x1_0_textline_ori_infer.tar)
 
 ## CPU Feature Detection
@@ -170,8 +170,10 @@ Features: SSE SSE2 SSE3 SSSE3 SSE4.1 SSE4.2 AVX AVX2 FMA F16C BMI1 BMI2 POPCNT A
 
 | Issue | Impact | Workaround |
 |-------|--------|------------|
+| Git LFS | Large files not downloaded | Install Git LFS before clone: `git lfs install` |
 | OpenCV imwrite warning | Result images may not be saved | OCR inference works correctly; image saving is best-effort |
-| CMake 4.x compatibility | Some old cmake files need updates | Add `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` |
+| CMake 4.x compatibility | Some old cmake files need updates | Add `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` (handled automatically) |
+| GCC version compatibility | Link errors | GCC 11.2.0 libraries cannot be linked with GCC 16.1.0 runtime |
 
 ## Performance
 
