@@ -89,8 +89,9 @@ Utility::FindModelPath(const std::string &model_dir,
 absl::StatusOr<std::string>
 Utility::GetDefaultConfig(std::string pipeline_name) {
   std::string current_path = __FILE__;
+  // Try both separators (GCC on Windows uses '/' in __FILE__)
   for (int i = 0; i < 2; i++) {
-    size_t pos = current_path.find_last_of(PATH_SEPARATOR);
+    size_t pos = current_path.find_last_of("\\/");
     if (pos == std::string::npos) {
       return absl::NotFoundError("Could not find pipeline config yaml :" +
                                  pipeline_name);
