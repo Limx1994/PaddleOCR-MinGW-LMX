@@ -25,7 +25,6 @@ PaddleOCR-MinGW-LMX/
 │   ├── paddle_inference_gcc/  # Paddle 推理库（含 oneDNN）
 │   ├── opencv_install_gcc/    # OpenCV 库
 │   └── onednn_install_gcc/    # oneDNN (MKLDNN) 库
-├── libs_upload/            # 预编译库头文件（用于分发）
 ├── scripts/                # 构建脚本
 │   ├── build_paddle.bat    # 编译 Paddle（静态模式）
 │   ├── build_paddle_dll.bat # 编译 Paddle（DLL 模式）
