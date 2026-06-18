@@ -4,6 +4,21 @@ set SCRIPT_DIR=%~dp0
 set ROOT_DIR=%SCRIPT_DIR%..
 set PATH=%ROOT_DIR%\toolchain\mingw\bin;%PATH%
 
+:: 查找 cmake：优先 toolchain，回退系统 PATH
+set CMAKE_EXE=%ROOT_DIR%\toolchain\mingw\bin\cmake.exe
+if not exist "%CMAKE_EXE%" (
+    where cmake.exe >nul 2>&1
+    if errorlevel 1 (
+        echo ERROR: cmake.exe not found in toolchain or system PATH.
+        echo Please install CMake and add it to PATH.
+        exit /b 1
+    )
+    for /f "delims=" %%i in ('where cmake.exe') do set CMAKE_EXE=%%i
+    echo [INFO] Using system cmake: %CMAKE_EXE%
+) else (
+    echo [INFO] Using toolchain cmake: %CMAKE_EXE%
+)
+
 echo ========================================
 echo Building PaddlePaddle Inference (MinGW)
 echo Root dir: %ROOT_DIR%
@@ -14,7 +29,7 @@ cd /d "%ROOT_DIR%\src\Paddle\build_gcc"
 
 echo.
 echo [Step 1] Running CMake configuration...
-"%ROOT_DIR%\toolchain\mingw\bin\cmake.exe" .. -G Ninja ^
+"%CMAKE_EXE%" .. -G Ninja ^
   -DCMAKE_C_COMPILER="%ROOT_DIR%/toolchain/mingw/bin/gcc.exe" ^
   -DCMAKE_CXX_COMPILER="%ROOT_DIR%/toolchain/mingw/bin/g++.exe" ^
   -DCMAKE_MAKE_PROGRAM="%ROOT_DIR%/toolchain/mingw/bin/ninja.exe" ^
