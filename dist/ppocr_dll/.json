@@ -1,0 +1,120 @@
+{
+    "input_path": "test.jpg",
+    "page_index": null,
+    "model_settings": {
+        "use_textline_orientation": false,
+        "use_doc_preprocessor": false
+    },
+    "dt_polys": [
+        [
+            [
+                311,
+                686
+            ],
+            [
+                523,
+                695
+            ],
+            [
+                520,
+                756
+            ],
+            [
+                308,
+                746
+            ]
+        ],
+        [
+            [
+                557,
+                692
+            ],
+            [
+                566,
+                692
+            ],
+            [
+                566,
+                701
+            ],
+            [
+                557,
+                701
+            ]
+        ]
+    ],
+    "text_det_params": {
+        "limit_side_len": 64,
+        "limit_type": "min",
+        "thresh": 0.30000001192092896,
+        "max_side_limit": 4000,
+        "box_thresh": 0.6000000238418579,
+        "unclip_ratio": 1.5
+    },
+    "text_type": "general",
+    "textline_orientation_angles": [
+        -1,
+        -1
+    ],
+    "text_rec_score_thresh": 0.0,
+    "rec_texts": [
+        "赣G·0522Y",
+        "O"
+    ],
+    "rec_scores": [
+        0.9570668339729309,
+        0.4172612130641937
+    ],
+    "rec_polys": [
+        [
+            [
+                311,
+                686
+            ],
+            [
+                523,
+                695
+            ],
+            [
+                520,
+                756
+            ],
+            [
+                308,
+                746
+            ]
+        ],
+        [
+            [
+                557,
+                692
+            ],
+            [
+                566,
+                692
+            ],
+            [
+                566,
+                701
+            ],
+            [
+                557,
+                701
+            ]
+        ]
+    ],
+    "rec_boxes": [
+        [
+            308,
+            686,
+            523,
+            756
+        ],
+        [
+            557,
+            692,
+            566,
+            701
+        ]
+    ]
+}
