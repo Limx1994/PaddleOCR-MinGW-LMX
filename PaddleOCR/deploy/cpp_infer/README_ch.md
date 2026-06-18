@@ -24,6 +24,7 @@
 | CMake | 3.15+ | 构建系统生成器（需在系统 PATH 中） |
 | Paddle Inference | 最新版 | GCC 编译版本（已包含在 libs/） |
 | OpenCV | 4.7.0 | GCC 编译版本（已包含在 libs/） |
+| oneDNN | 3.6.2 | 可选，MKLDNN 加速（已包含在 libs/） |
 
 ## 编译步骤
 
@@ -49,29 +50,39 @@
 使用 DLL 模式可生成更小的可执行文件（4-DLL 拆分）：
 
 ```batch
-cd deploy\cpp_infer
-mkdir build_mingw_dll && cd build_mingw_dll
-cmake .. -G Ninja ^
-  -DCMAKE_C_COMPILER=D:\path\to\mingw\bin\gcc.exe ^
-  -DCMAKE_CXX_COMPILER=D:\path\to\mingw\bin\g++.exe ^
-  -DCMAKE_BUILD_TYPE=Release ^
-  -DCMAKE_MAKE_PROGRAM=D:\path\to\mingw\bin\ninja.exe ^
-  -DPADDLE_LIB=D:\path\to\paddle_inference_gcc ^
-  -DOPENCV_DIR=D:\path\to\opencv_install_gcc ^
-  -DWITH_MKL=OFF ^
-  -DWITH_GPU=OFF ^
-  -DWITH_DLL_LIB=ON
-ninja -j16
+cd PaddleOCR\deploy\cpp_infer
+build_mingw.bat --dll
 ```
 
-输出：`build_mingw_dll\ppocr.exe`（2.2MB，需要 DLL 在运行目录中）
+输出：`build_mingw_dll\ppocr.exe`（5.6MB，需要 DLL 在运行目录中）
+
+DLL 模式运行时需要 10 个 DLL 文件：
+- `libcommon.dll`, `libpir.dll`, `libphi_core.dll`, `libpaddle_inference.dll`（Paddle）
+- `libopencv_world470.dll`（OpenCV）
+- `libpolyclipping.dll`（Clipper）
+- `libgcc_s_seh-1.dll`, `libstdc++-6.dll`, `libwinpthread-1.dll`, `libgomp-1.dll`（MinGW）
 
 ## 运行推理
 
-### 通用 OCR
+### 通用 OCR（静态模式）
 
 ```batch
 cd dist\ppocr
+
+ppocr.exe ocr --input <图片路径> ^
+  --text_detection_model_dir ./models/PP-OCRv4_mobile_det_infer ^
+  --text_detection_model_name PP-OCRv4_mobile_det ^
+  --text_recognition_model_dir ./models/PP-OCRv4_mobile_rec_infer ^
+  --text_recognition_model_name PP-OCRv4_mobile_rec ^
+  --use_doc_orientation_classify false ^
+  --use_doc_unwarping false ^
+  --use_textline_orientation false
+```
+
+### 通用 OCR（DLL 模式）
+
+```batch
+cd dist\ppocr_dll
 
 ppocr.exe ocr --input <图片路径> ^
   --text_detection_model_dir ./models/PP-OCRv4_mobile_det_infer ^

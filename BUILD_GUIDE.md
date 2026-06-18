@@ -112,15 +112,11 @@ build_paddle_dll.bat
 cd ..
 ```
 
-生成 4 个 DLL，然后分发到运行目录：
-
-```batch
-cd scripts
-distribute_dll.bat
-cd ..
-```
+生成 4 个 Paddle DLL（libcommon.dll, libpir.dll, libphi_core.dll, libpaddle_inference.dll）。
 
 ### 步骤 6: 编译 PaddleOCR
+
+**静态模式**（361MB exe，无需额外 DLL）：
 
 ```batch
 cd PaddleOCR\deploy\cpp_infer
@@ -128,11 +124,35 @@ build_mingw.bat
 cd ..\..\..
 ```
 
+**DLL 模式**（5.6MB exe，需要 Paddle DLL）：
+
+```batch
+cd PaddleOCR\deploy\cpp_infer
+build_mingw.bat --dll
+cd ..\..\..
+```
+
 ### 步骤 7: 运行
+
+**静态模式**：
 
 ```batch
 cd dist\ppocr
 ppocr.exe ocr --input ..\..\test_images\test.jpg ^
+  --text_detection_model_dir ./models/PP-OCRv4_mobile_det_infer ^
+  --text_recognition_model_dir ./models/PP-OCRv4_mobile_rec_infer ^
+  --text_detection_model_name PP-OCRv4_mobile_det ^
+  --text_recognition_model_name PP-OCRv4_mobile_rec ^
+  --use_doc_orientation_classify false ^
+  --use_doc_unwarping false ^
+  --use_textline_orientation false
+```
+
+**DLL 模式**：
+
+```batch
+cd dist\ppocr_dll
+ppocr.exe ocr --input test.jpg ^
   --text_detection_model_dir ./models/PP-OCRv4_mobile_det_infer ^
   --text_recognition_model_dir ./models/PP-OCRv4_mobile_rec_infer ^
   --text_detection_model_name PP-OCRv4_mobile_det ^
@@ -158,10 +178,9 @@ PaddleOCR-MinGW-LMX/
 │   └── onednn_install_gcc/    # oneDNN (MKLDNN) 库
 ├── libs_upload/            # 预编译库头文件（用于分发）
 ├── scripts/                # 构建脚本
-├── dist/ppocr/             # 运行时文件
-│   ├── ppocr.exe           # 可执行文件（2.2MB，DLL 模式）
-│   ├── models/             # OCR 模型（.json 格式）
-│   └── *.dll               # 运行时 DLL
+├── dist/
+│   ├── ppocr/              # 静态模式运行目录（361MB exe）
+│   └── ppocr_dll/          # DLL 模式运行目录（5.6MB exe + DLL）
 └── test_images/            # 测试数据
 ```
 

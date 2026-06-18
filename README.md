@@ -27,16 +27,22 @@ PaddleOCR-MinGW-LMX/
 │   └── onednn_install_gcc/    # oneDNN (MKLDNN) 库
 ├── libs_upload/            # 预编译库头文件（用于分发）
 ├── scripts/                # 构建脚本
-│   ├── build_paddle.bat    # 编译 Paddle（含 oneDNN）
+│   ├── build_paddle.bat    # 编译 Paddle（静态模式）
 │   ├── build_paddle_dll.bat # 编译 Paddle（DLL 模式）
 │   ├── build_onednn.bat    # 编译 oneDNN
 │   └── distribute_dll.bat  # 分发 DLL 到运行目录
-├── dist/ppocr/             # 运行时分发包
-│   ├── ppocr.exe           # 可执行文件（2.2MB，DLL 模式）
-│   ├── *.dll               # 运行时 DLL
-│   └── models/             # OCR 模型（.json 格式）
+├── dist/
+│   ├── ppocr/              # 静态模式运行目录（361MB exe）
+│   └── ppocr_dll/          # DLL 模式运行目录（5.6MB exe + DLL）
 └── test_images/            # 测试数据
 ```
+
+### 两种构建模式
+
+| 模式 | ppocr.exe 大小 | 运行时依赖 | 适用场景 |
+|------|---------------|-----------|---------|
+| 静态模式 | 361MB | MinGW 运行时 DLL | 简单部署，单文件 |
+| DLL 模式 | 5.6MB | Paddle 4 DLL + OpenCV + MinGW | 小体积，多项目共享 |
 
 ## 快速开始
 
@@ -120,7 +126,7 @@ cd scripts
 build_paddle_dll.bat
 ```
 
-生成 4 个 DLL：
+生成 4 个 Paddle DLL：
 
 | DLL                       | 大小    | 说明       |
 | ------------------------- | ----- | -------- |
@@ -129,12 +135,29 @@ build_paddle_dll.bat
 | `libphi_core.dll`         | ~194M | Phi 核心库  |
 | `libpaddle_inference.dll` | ~348M | 推理 API   |
 
-分发 DLL 到运行目录：
+### 编译 PaddleOCR（DLL 模式）
 
 ```batch
-cd scripts
-distribute_dll.bat
+cd PaddleOCR\deploy\cpp_infer
+build_mingw.bat --dll
 ```
+
+编译产物：`build_mingw_dll\ppocr.exe`（5.6MB）
+
+DLL 模式运行时需要以下 DLL（共 10 个）：
+
+| DLL | 大小 | 说明 |
+|-----|------|------|
+| `libcommon.dll` | ~413K | Paddle 基础库 |
+| `libpir.dll` | ~2.7M | Paddle IR |
+| `libphi_core.dll` | ~194M | Paddle Phi |
+| `libpaddle_inference.dll` | ~348M | Paddle 推理 |
+| `libopencv_world470.dll` | ~53M | OpenCV |
+| `libpolyclipping.dll` | ~2M | Clipper 库 |
+| `libgcc_s_seh-1.dll` | ~74K | MinGW 运行时 |
+| `libstdc++-6.dll` | ~1.9M | MinGW 运行时 |
+| `libwinpthread-1.dll` | ~52K | MinGW 运行时 |
+| `libgomp-1.dll` | ~237K | OpenMP 运行时 |
 
 ### 编译 OpenCV
 
@@ -152,14 +175,14 @@ mingw32-make -j12
 mingw32-make install
 ```
 
-### 编译 PaddleOCR C++ 引擎
+### 编译 PaddleOCR C++ 引擎（静态模式）
 
 ```batch
 cd PaddleOCR\deploy\cpp_infer
 build_mingw.bat
 ```
 
-编译产物：`build_mingw\ppocr.exe`
+编译产物：`build_mingw\ppocr.exe`（361MB）
 
 ## 命令行参数
 

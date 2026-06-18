@@ -6,17 +6,14 @@
 
 ```
 dist/ppocr/
-├── ppocr.exe                    # 主程序 (2.2MB)
-├── configs/
-│   └── OCR.yaml                 # 流水线配置
+├── ppocr.exe                    # 主程序 (361MB, 静态链接模式)
 ├── models/                      # 推理模型目录
 │   ├── PP-OCRv4_mobile_det_infer/   # 文本检测模型 (mobile)
 │   └── PP-OCRv4_mobile_rec_infer/   # 文本识别模型 (mobile)
 ├── output/                      # 输出目录
 ├── .json                        # 最近一次推理结果
-├── lib*.dll                     # Paddle 推理库 (4 个 DLL)
 ├── libopencv_world470.dll       # OpenCV 库
-└── 其他第三方 DLL               # MinGW 运行时等
+└── MinGW 运行时 DLL             # libgcc_s_seh-1.dll, libstdc++-6.dll 等
 ```
 
 ## 快速开始
@@ -232,7 +229,7 @@ for %%f in (*.jpg) do (
 
 ### PP-OCRv4_mobile 模型
 
-测试环境: Intel CPU, 8 线程, 800×1079 图片
+测试环境: Intel CPU, 20 逻辑处理器, 800×1079 图片
 
 | 场景     | paddle 模式 | mkldnn 模式 |
 | ------ | --------- | --------- |
@@ -283,12 +280,7 @@ Windows 下中文路径需要使用 UTF-8 编码的命令行。如果遇到问�
 
 ## 编译说明
 
-本工具使用 MinGW GCC 11.2+ 编译，采用 DLL 模式 (4-DLL 拆分)：
-
-- `libcommon.dll` - 基础工具库
-- `libpir.dll` - Paddle IR 中间表示
-- `libphi_core.dll` - 核心张量/内核库
-- `libpaddle_inference.dll` - 推理 API
+本工具使用 MinGW GCC 11.2.0 编译，采用静态链接模式（361MB）。Paddle 推理库、OpenCV 和 oneDNN 均静态链接到可执行文件中，运行时仅需 MinGW 运行时 DLL。
 
 详细编译说明请参考项目根目录的 `BUILD_GUIDE.md`。
 

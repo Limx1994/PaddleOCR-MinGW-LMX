@@ -50,29 +50,39 @@ This document describes how to build and run the PaddleOCR C++ inference engine 
 To build with DLL mode (smaller executable, 4-DLL split):
 
 ```batch
-cd deploy\cpp_infer
-mkdir build_mingw_dll && cd build_mingw_dll
-cmake .. -G Ninja ^
-  -DCMAKE_C_COMPILER=D:\path\to\mingw\bin\gcc.exe ^
-  -DCMAKE_CXX_COMPILER=D:\path\to\mingw\bin\g++.exe ^
-  -DCMAKE_BUILD_TYPE=Release ^
-  -DCMAKE_MAKE_PROGRAM=D:\path\to\mingw\bin\ninja.exe ^
-  -DPADDLE_LIB=D:\path\to\paddle_inference_gcc ^
-  -DOPENCV_DIR=D:\path\to\opencv_install_gcc ^
-  -DWITH_MKL=OFF ^
-  -DWITH_GPU=OFF ^
-  -DWITH_DLL_LIB=ON
-ninja -j16
+cd PaddleOCR\deploy\cpp_infer
+build_mingw.bat --dll
 ```
 
-Output: `build_mingw_dll\ppocr.exe` (2.2MB, requires DLLs in runtime directory)
+Output: `build_mingw_dll\ppocr.exe` (5.6MB, requires DLLs in runtime directory)
+
+DLL mode requires 10 DLL files in the runtime directory:
+- `libcommon.dll`, `libpir.dll`, `libphi_core.dll`, `libpaddle_inference.dll` (Paddle)
+- `libopencv_world470.dll` (OpenCV)
+- `libpolyclipping.dll` (Clipper)
+- `libgcc_s_seh-1.dll`, `libstdc++-6.dll`, `libwinpthread-1.dll`, `libgomp-1.dll` (MinGW)
 
 ## Run Inference
 
-### General OCR
+### General OCR (Static Mode)
 
 ```batch
 cd dist\ppocr
+
+ppocr.exe ocr --input <image_path> ^
+  --text_detection_model_dir ./models/PP-OCRv4_mobile_det_infer ^
+  --text_detection_model_name PP-OCRv4_mobile_det ^
+  --text_recognition_model_dir ./models/PP-OCRv4_mobile_rec_infer ^
+  --text_recognition_model_name PP-OCRv4_mobile_rec ^
+  --use_doc_orientation_classify false ^
+  --use_doc_unwarping false ^
+  --use_textline_orientation false
+```
+
+### General OCR (DLL Mode)
+
+```batch
+cd dist\ppocr_dll
 
 ppocr.exe ocr --input <image_path> ^
   --text_detection_model_dir ./models/PP-OCRv4_mobile_det_infer ^
