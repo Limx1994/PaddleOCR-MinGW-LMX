@@ -130,17 +130,30 @@ get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
 target_link_libraries(paddle_inference_shared ${os_dependency_modules})
 if(WIN32)
   if(MINGW)
-    # MinGW GCC: WINDOWS_EXPORT_ALL_SYMBOLS causes "export ordinal too large"
-    # because there are too many symbols. Disable it and use __declspec(dllexport)
-    # on the API functions instead.
+    # MinGW GCC: Multi-DLL strategy
+    # common.dll, pir.dll are SHARED with --export-all-symbols
+    # phi_core linked with --whole-archive for template instantiations
+    # Only export public API symbols via __declspec(dllexport) (PD_INFER_DECL)
     set_property(TARGET paddle_inference_shared
                  PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS OFF)
-    # Use --whole-archive to force inclusion of all phi_core objects,
-    # working around GCC's template inlining that makes symbols local.
-    # Must wrap phi_core (not phi) because phi_core contains the actual code.
+    # Link phi_core static lib with --whole-archive for template instantiations
+    # Link fluid_modules and other deps normally
     target_link_libraries(paddle_inference_shared
-      -Wl,--whole-archive phi phi_core -Wl,--no-whole-archive
-      common ws2_32 dbghelp)
+      -Wl,--whole-archive
+      ${PADDLE_BINARY_DIR}/paddle/phi/libphi_core.a
+      -Wl,--no-whole-archive
+      ${fluid_modules}
+      ${STATIC_INFERENCE_API}
+      ${utils_modules}
+      pir common
+      glog xxhash protobuf utf8proc
+      ${PADDLE_BINARY_DIR}/third_party/install/onednn/lib/libdnnl.a
+      ${PADDLE_BINARY_DIR}/third_party/install/openblas/lib/libopenblas.a
+      ws2_32 dbghelp shlwapi)
+    # Allow multiple definitions for template instantiations
+    target_link_options(paddle_inference_shared PRIVATE -Wl,--allow-multiple-definition)
+    # Define PADDLE_DLL_INFERENCE to enable dllexport for inference API symbols
+    target_compile_definitions(paddle_inference_shared PRIVATE PADDLE_DLL_INFERENCE)
   else()
     set_property(TARGET paddle_inference_shared
                  PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)

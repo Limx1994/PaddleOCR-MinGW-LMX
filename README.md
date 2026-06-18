@@ -22,7 +22,7 @@ D:\tmp\tmp\
 │   ├── paddle_toolchain.cmake
 │   └── merge_libs.mri      # 静态库合并脚本
 ├── dist/ppocr/             # 运行时分发包
-│   ├── ppocr.exe           # 可执行文件（360MB，静态链接）
+│   ├── ppocr.exe           # 可执行文件（2.2MB，DLL 模式）
 │   ├── configs/            # OCR 配置文件
 │   ├── *.dll               # 运行时 DLL
 │   └── models/             # OCR 模型
@@ -94,6 +94,31 @@ toolchain\mingw\bin\ar.exe -M < paddle_inference.mri
 - `paddle\lib\libphi_core.a` — phi 核心库
 - `third_party\install\onednn\` — oneDNN 头文件和库
 
+### 编译 Paddle 推理库（DLL 模式，推荐）
+
+DLL 模式可避免 Windows 65535 导出符号限制，生成更小的可执行文件：
+
+```batch
+cd scripts
+build_paddle_dll.bat
+```
+
+生成 4 个 DLL：
+
+| DLL                       | 大小    | 说明       |
+| ------------------------- | ----- | -------- |
+| `libcommon.dll`           | ~413K | 基础工具库    |
+| `libpir.dll`              | ~2.7M | PIR 中间表示 |
+| `libphi_core.dll`         | ~194M | Phi 核心库  |
+| `libpaddle_inference.dll` | ~348M | 推理 API   |
+
+分发 DLL 到运行目录：
+
+```batch
+cd scripts
+distribute_dll.bat
+```
+
 ### 编译 OpenCV
 
 源码位于 `src/opencv-4.7.0/`，预编译版本位于 `libs/opencv_install_gcc/`。如需重新编译：
@@ -159,7 +184,7 @@ build_mingw.bat
 - **大文件编译**：需要 `-Wa,-mbig-obj` 参数处理大型 COFF 段
 - **符号冲突**：合并静态库时需要 `-Wl,--allow-multiple-definition`
 - **TLS 析构崩溃**：已通过 immortal singleton + char[] buffer 模式解决
-- **DLL 共享库**：因导出符号数超限（>65535），无法构建 `paddle_inference.dll`，仅支持静态链接
+- **DLL 共享库**：已通过 4-DLL 拆分模式解决（common/pir/phi_core/paddle_inference）
 - **CMake 4.x 兼容性**：需要 `-DCMAKE_POLICY_VERSION_MINIMUM=3.5`
 
 ## 性能数据

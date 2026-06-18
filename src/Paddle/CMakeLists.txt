@@ -155,9 +155,11 @@ if(WIN32)
   # re-runs CMake to regenerate the build system when the target specification source changes.
   set(CMAKE_SUPPRESS_REGENERATION OFF)
   set(CMAKE_STATIC_LIBRARY_PREFIX lib)
-  set(WITH_SHARED_PHI
-      OFF
-      CACHE BOOL "Disable WITH_SHARED_PHI when compiling PADDLE ON WIN32" FORCE)
+  if(NOT MINGW)
+    set(WITH_SHARED_PHI
+        OFF
+        CACHE BOOL "Disable WITH_SHARED_PHI when compiling PADDLE ON WIN32" FORCE)
+  endif()
 
   if(NOT MINGW)
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /bigobj")
@@ -742,9 +744,11 @@ if(ON_INFER)
     STATUS "On inference mode, will take place some specific optimization.")
   include(inference_lib)
   add_definitions(-DPADDLE_ON_INFERENCE)
-  set(WITH_SHARED_IR
-      OFF
-      CACHE BOOL "Only paddle_inference.so is allowed in inference." FORCE)
+  if(NOT MINGW)
+    set(WITH_SHARED_IR
+        OFF
+        CACHE BOOL "Only paddle_inference.so is allowed in inference." FORCE)
+  endif()
 else()
   #TODO(luotao), combine this warning with `make inference_lib_dist` command.
   message(

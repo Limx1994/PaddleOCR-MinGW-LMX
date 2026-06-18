@@ -76,6 +76,8 @@ cd ..
 
 ### 步骤 5: 编译 Paddle 推理库
 
+**方式 A：静态链接（传统方式）**
+
 ```batch
 cd scripts
 build_paddle.bat
@@ -97,6 +99,22 @@ mkdir libs\paddle_inference_gcc\paddle\lib
 copy src\Paddle\build_gcc_onednn10\paddle\fluid\inference\libpaddle_inference.a libs\paddle_inference_gcc\paddle\lib\
 copy src\Paddle\build_gcc_onednn10\paddle\phi\libphi_core.a libs\paddle_inference_gcc\paddle\lib\
 copy src\Paddle\build_gcc_onednn10\paddle\common\libcommon.a libs\paddle_inference_gcc\paddle\lib\
+```
+
+**方式 B：DLL 模式（推荐，可执行文件更小）**
+
+```batch
+cd scripts
+build_paddle_dll.bat
+cd ..
+```
+
+生成 4 个 DLL，然后分发到运行目录：
+
+```batch
+cd scripts
+distribute_dll.bat
+cd ..
 ```
 
 ### 步骤 6: 编译 PaddleOCR
@@ -139,7 +157,7 @@ PaddleOCR-MinGW-LMX/
 ├── scripts/                # 构建脚本
 ├── release/                # 预编译归档
 ├── dist/ppocr/             # 运行时文件
-│   ├── ppocr.exe           # 可执行文件（360MB，静态链接）
+│   ├── ppocr.exe           # 可执行文件（2.2MB，DLL 模式）
 │   ├── configs/            # OCR 配置文件
 │   ├── models/             # OCR 模型
 │   └── *.dll               # 运行时 DLL

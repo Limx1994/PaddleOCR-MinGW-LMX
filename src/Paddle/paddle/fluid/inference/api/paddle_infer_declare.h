@@ -14,7 +14,7 @@
 
 #pragma once
 
-#if defined(_WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32)
 #ifndef PD_INFER_DECL
 #ifdef PADDLE_DLL_INFERENCE
 #define PD_INFER_DECL __declspec(dllexport)

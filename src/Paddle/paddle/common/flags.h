@@ -28,11 +28,15 @@
 #include "paddle/utils/test_macros.h"
 #include "paddle/utils/variant.h"
 
-#if defined(_WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32)
+#ifdef PADDLE_DLL_EXPORT
+#define COMMON_IMPORT_FLAG __declspec(dllexport)
+#else
 #define COMMON_IMPORT_FLAG __declspec(dllimport)
+#endif  // PADDLE_DLL_EXPORT
 #else
 #define COMMON_IMPORT_FLAG
-#endif
+#endif  // _WIN32
 
 #ifdef PADDLE_WITH_GFLAGS
 #define PD_DEFINE_bool(name, val, txt) DEFINE_bool(name, val, txt)
@@ -216,7 +220,7 @@ DEFINE_FROM_ENV_FUNC(std::string, String);
 }  // namespace flags
 }  // namespace paddle
 
-#if defined(_WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32)
 #define PHI_EXPORT_FLAG __declspec(dllexport)
 #if defined(PHI_INNER)
 #define PHI_IMPORT_FLAG __declspec(dllexport)

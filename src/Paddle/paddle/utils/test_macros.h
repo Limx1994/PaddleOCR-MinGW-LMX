@@ -14,11 +14,14 @@
 
 #pragma once
 
-#define TEST_API
-#if defined(_WIN32) && !defined(__MINGW32__) && !defined(STATIC_PADDLE)
+#ifndef TEST_API
+#if defined(_WIN32) && !defined(STATIC_PADDLE)
 #ifdef PADDLE_DLL_EXPORT
 #define TEST_API __declspec(dllexport)
 #else
 #define TEST_API __declspec(dllimport)
 #endif  // PADDLE_DLL_EXPORT
-#endif  // _WIN32 && PADDLE_WITH_TESTING &&!STATIC_PADDLE
+#else
+#define TEST_API
+#endif  // _WIN32 && !STATIC_PADDLE
+#endif  // TEST_API

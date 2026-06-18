@@ -43,6 +43,28 @@
 
 3. **输出文件**：`build_mingw\ppocr.exe`
 
+### DLL 模式编译
+
+使用 DLL 模式可生成更小的可执行文件（4-DLL 拆分）：
+
+```batch
+cd deploy\cpp_infer
+mkdir build_mingw_dll && cd build_mingw_dll
+cmake .. -G Ninja ^
+  -DCMAKE_C_COMPILER=D:\path\to\mingw\bin\gcc.exe ^
+  -DCMAKE_CXX_COMPILER=D:\path\to\mingw\bin\g++.exe ^
+  -DCMAKE_BUILD_TYPE=Release ^
+  -DCMAKE_MAKE_PROGRAM=D:\path\to\mingw\bin\ninja.exe ^
+  -DPADDLE_LIB=D:\path\to\paddle_inference_gcc ^
+  -DOPENCV_DIR=D:\path\to\opencv_install_gcc ^
+  -DWITH_MKL=OFF ^
+  -DWITH_GPU=OFF ^
+  -DWITH_DLL_LIB=ON
+ninja -j16
+```
+
+输出：`build_mingw_dll\ppocr.exe`（2.2MB，需要 DLL 在运行目录中）
+
 ## 运行推理
 
 ### 通用 OCR

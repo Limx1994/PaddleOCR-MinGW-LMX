@@ -67,6 +67,27 @@ Key CMake options for MinGW builds:
 | `WITH_TESTING` | OFF | Build unit tests |
 | `WITH_ONEDNN` | ON | oneDNN (MKLDNN) acceleration |
 
+### Build with DLL Mode (MinGW)
+
+To avoid Windows 65535 export ordinal limit, build as 4 separate DLLs:
+
+``` sh
+mkdir build_gcc_dll && cd build_gcc_dll
+cmake .. -G Ninja \
+  -DCMAKE_C_COMPILER=<path-to-toolchain>/mingw/bin/gcc.exe \
+  -DCMAKE_CXX_COMPILER=<path-to-toolchain>/mingw/bin/g++.exe \
+  -DCMAKE_MAKE_PROGRAM=<path-to-toolchain>/mingw/bin/ninja.exe \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DON_INFER=ON -DWITH_GPU=OFF -DWITH_PYTHON=OFF \
+  -DWITH_MKL=OFF -DWITH_ONEDNN=ON -DWITH_AVX=ON \
+  -DWITH_SHARED_PHI=ON -DWITH_SHARED_IR=ON \
+  -DCMAKE_CXX_FLAGS="-Wa,-mbig-obj -g0 -O2" \
+  -DCMAKE_C_FLAGS="-Wa,-mbig-obj -g0 -O2"
+ninja -j16
+```
+
+This produces 4 DLLs: `libcommon.dll`, `libpir.dll`, `libphi_core.dll`, `libpaddle_inference.dll`.
+
 For more information about installation, please view [Quick Install](https://www.paddlepaddle.org.cn/install/quick)
 
 Now our developers can acquire Tesla V100 online computing resources for free. If you create a program by AI Studio, you will obtain 8 hours to train models online per day. [Click here to start](https://aistudio.baidu.com/aistudio/index).

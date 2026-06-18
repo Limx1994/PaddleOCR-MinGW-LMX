@@ -4,7 +4,11 @@ set_property(GLOBAL PROPERTY IR_TARGETS "")
 file(GLOB_RECURSE PIR_CPP_SOURCES "*.cc")
 
 if(WIN32)
-  if(WITH_SHARED_IR)
+  if(MINGW)
+    set(IR_NAME
+        libpir.dll
+        CACHE INTERNAL "" FORCE)
+  elseif(WITH_SHARED_IR)
     set(IR_NAME
         pir.dll
         CACHE INTERNAL "" FORCE)
@@ -39,9 +43,16 @@ set(IR_LIB
     "${CMAKE_CURRENT_BINARY_DIR}/${IR_NAME}"
     CACHE FILEPATH "IR Library" FORCE)
 
-if(WITH_SHARED_IR)
+if(MINGW OR WITH_SHARED_IR)
   add_library(pir SHARED ${PIR_CPP_SOURCES})
   target_link_libraries(pir common)
+  if(MINGW)
+    # MinGW: use --export-all-symbols to export all symbols from pir DLL
+    # WINDOWS_EXPORT_ALL_SYMBOLS only works for MSVC, not MinGW
+    target_link_options(pir PRIVATE -Wl,--export-all-symbols)
+    # Link Windows system libraries needed by glog
+    target_link_libraries(pir dbghelp ws2_32 shlwapi)
+  endif()
 else()
   cc_library(
     pir

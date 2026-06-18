@@ -15,13 +15,14 @@
 #pragma once
 #include "paddle/utils/test_macros.h"
 
-#define IR_API TEST_API
-#if defined(_WIN32) && !defined(__MINGW32__)
-#ifndef STATIC_IR
+#ifndef IR_API
+#if defined(_WIN32) && !defined(__MINGW32__) && !defined(STATIC_IR)
 #ifdef IR_LIBRARY
 #define IR_API __declspec(dllexport)
 #else
 #define IR_API __declspec(dllimport)
 #endif  // IR_LIBRARY
-#endif  // STATIC_IR
+#else
+#define IR_API
 #endif  // _WIN32
+#endif  // IR_API

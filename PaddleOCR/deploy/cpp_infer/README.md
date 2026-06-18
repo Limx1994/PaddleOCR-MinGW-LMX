@@ -44,6 +44,28 @@ This document describes how to build and run the PaddleOCR C++ inference engine 
 
 3. **Output**: `build_mingw\ppocr.exe`
 
+### Build with DLL Mode
+
+To build with DLL mode (smaller executable, 4-DLL split):
+
+```batch
+cd deploy\cpp_infer
+mkdir build_mingw_dll && cd build_mingw_dll
+cmake .. -G Ninja ^
+  -DCMAKE_C_COMPILER=D:\path\to\mingw\bin\gcc.exe ^
+  -DCMAKE_CXX_COMPILER=D:\path\to\mingw\bin\g++.exe ^
+  -DCMAKE_BUILD_TYPE=Release ^
+  -DCMAKE_MAKE_PROGRAM=D:\path\to\mingw\bin\ninja.exe ^
+  -DPADDLE_LIB=D:\path\to\paddle_inference_gcc ^
+  -DOPENCV_DIR=D:\path\to\opencv_install_gcc ^
+  -DWITH_MKL=OFF ^
+  -DWITH_GPU=OFF ^
+  -DWITH_DLL_LIB=ON
+ninja -j16
+```
+
+Output: `build_mingw_dll\ppocr.exe` (2.2MB, requires DLLs in runtime directory)
+
 ## Run Inference
 
 ### General OCR
@@ -150,7 +172,6 @@ Features: SSE SSE2 SSE3 SSSE3 SSE4.1 SSE4.2 AVX AVX2 FMA F16C BMI1 BMI2 POPCNT A
 | Issue | Impact | Workaround |
 |-------|--------|------------|
 | OpenCV imwrite warning | Result images may not be saved | OCR inference works correctly; image saving is best-effort |
-| DLL shared library cannot be built | Static linking only | Use static lib (`libpaddle_inference.a`) |
 | CMake 4.x compatibility | Some old cmake files need updates | Add `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` |
 
 ## Performance

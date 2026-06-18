@@ -139,7 +139,7 @@ if(MINGW)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g0 -O2 -DNDEBUG -Wa,-mbig-obj -ffunction-sections -fdata-sections ${CPU_SIMD_FLAGS} ${FLAG_OPENMP}")
     # Allow multiple definitions for merged static library + strip unused sections
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--allow-multiple-definition -Wl,--gc-sections")
-    if (WITH_STATIC_LIB)
+    if (WITH_STATIC_LIB OR WITH_DLL_LIB)
         add_definitions(-DSTATIC_LIB)
         add_definitions(-DYAML_CPP_STATIC_DEFINE)
     endif()
@@ -193,6 +193,10 @@ include_directories("${PADDLE_LIB}/third_party/install/zlib/include")
 include_directories("${PADDLE_LIB}/third_party/install/yaml-cpp/include")
 include_directories("${PADDLE_LIB}/third_party/eigen3")
 include_directories("${PADDLE_LIB}/paddle/include/")
+include_directories("${PADDLE_LIB}/paddle/fluid/inference/api/")
+# Also add source directory for headers not in build directory
+include_directories("${PADDLE_LIB}/../paddle/fluid/inference/api/")
+include_directories("${PADDLE_LIB}/../paddle/fluid/framework/io/")
 include_directories("${CMAKE_SOURCE_DIR}/")
 
 # Optional includes - only add if directory exists
@@ -263,7 +267,9 @@ else()
 endif()
 
 # Note: libpaddle_inference_api.so/a must put before libpaddle_inference.so/a
-if(WITH_STATIC_LIB)
+option(WITH_DLL_LIB "Compile demo with DLL library (6-DLL split), default use static." OFF)
+
+if(WITH_STATIC_LIB AND NOT WITH_DLL_LIB)
   if(MINGW)
     set(DEPS
         -Wl,--whole-archive
@@ -278,6 +284,21 @@ if(WITH_STATIC_LIB)
     set(DEPS
         ${PADDLE_LIB}/paddle/lib/libpaddle_inference${CMAKE_STATIC_LIBRARY_SUFFIX})
   endif()
+elseif(WITH_DLL_LIB)
+  # 4-DLL split mode: link against individual DLLs
+  # Requires DLLs built with build_paddle_dll.bat
+  # DLL import libraries are in different directories
+  message(STATUS "Using DLL mode: ${PADDLE_LIB}")
+  if(MINGW)
+    set(DEPS
+        ${PADDLE_LIB}/paddle/fluid/inference/libpaddle_inference.dll.a
+        ${PADDLE_LIB}/paddle/phi/libphi_core.dll.a
+        ${PADDLE_LIB}/paddle/pir/libpir.dll.a
+        ${PADDLE_LIB}/paddle/common/libcommon.dll.a)
+  else()
+    set(DEPS
+        ${PADDLE_LIB}/paddle/fluid/inference/paddle_inference${CMAKE_SHARED_LIBRARY_SUFFIX})
+  endif()
 else()
   if(MINGW)
     set(DEPS
@@ -289,7 +310,7 @@ else()
     set(DEPS
         ${PADDLE_LIB}/paddle/lib/libpaddle_inference${CMAKE_SHARED_LIBRARY_SUFFIX})
   endif()
-endif(WITH_STATIC_LIB)
+endif()
 
 if(MINGW)
     set(DEPS ${DEPS}

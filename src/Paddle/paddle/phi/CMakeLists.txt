@@ -227,12 +227,20 @@ target_compile_definitions(phi_core PUBLIC PHI_INNER)
 
 if(WIN32)
   target_link_libraries(phi_core shlwapi.lib)
+  if(MINGW)
+    # MinGW: link Windows socket and system libraries
+    target_link_libraries(phi_core ws2_32 dbghelp)
+    # Allow multiple definitions for template instantiations
+    target_link_options(phi_core PRIVATE -Wl,--allow-multiple-definition)
+  endif()
 endif()
 
 if(WIN32)
   if(WITH_SHARED_PHI)
     if(MINGW)
-      set_property(TARGET phi_core PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS OFF)
+      # MinGW: use __declspec(dllexport) via PHI_INNER macro
+      # Define PHI_INNER to enable dllexport for phi symbols
+      target_compile_definitions(phi_core PRIVATE PHI_INNER)
     else()
       set_property(TARGET phi_core PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
     endif()
