@@ -248,12 +248,13 @@ _OCRPipeline::RotateImage(const std::vector<cv::Mat> &image_array_list,
   rotated_images.reserve(image_array_list.size());
   for (std::size_t i = 0; i < image_array_list.size(); ++i) {
     int angle_indicator = rotate_angle_list[i];
-    if (angle_indicator != 0 && angle_indicator != 1) {
+    // Support 4 directions: 0=0°, 1=90°, 2=180°, 3=270°
+    if (angle_indicator < 0 || angle_indicator > 3) {
       return absl::InvalidArgumentError(
-          "rotate_angle must be 0 or 1, now it's: " +
+          "rotate_angle must be 0, 1, 2, or 3, now it's: " +
           std::to_string(angle_indicator));
     }
-    int rotate_angle = angle_indicator * 180;
+    int rotate_angle = angle_indicator * 90;
     auto result_rotated_image =
         ComponentsProcessor::RotateImage(image_array_list[i], rotate_angle);
     if (!result_rotated_image.ok()) {

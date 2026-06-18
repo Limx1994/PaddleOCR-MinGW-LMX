@@ -131,6 +131,9 @@ dist/ppocr/models/
 ├── PP-OCRv4_mobile_rec_infer/          # 文本识别模型
 │   ├── inference.json                  # 或 inference.pdmodel
 │   └── inference.pdiparams
+├── PP-LCNet_x1_0_doc_ori_infer/        # 文档方向分类模型（4方向：0°/90°/180°/270°）
+│   ├── inference.json                  # 或 inference.pdmodel
+│   └── inference.pdiparams
 └── PP-LCNet_x1_0_textline_ori_infer/   # 文本行方向分类器（可选）
     ├── inference.json                  # 或 inference.pdmodel
     └── inference.pdiparams
@@ -143,7 +146,27 @@ dist/ppocr/models/
 **下载链接：**
 - 文本检测：[PP-OCRv4_mobile_det_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv4_mobile_det_infer.tar)
 - 文本识别：[PP-OCRv4_mobile_rec_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv4_mobile_rec_infer.tar)
+- 文档方向分类：[PP-LCNet_x1_0_doc_ori_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-LCNet_x1_0_doc_ori_infer.tar)
 - 文本行方向分类：[PP-LCNet_x1_0_textline_ori_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-LCNet_x1_0_textline_ori_infer.tar)
+
+### 文档方向分类
+
+`PP-LCNet_x1_0_doc_ori` 模型支持 4 方向分类：
+
+| 类别 ID | 角度 | 说明 |
+|---------|------|------|
+| 0 | 0° | 正常方向 |
+| 1 | 90° | 顺时针旋转 90° |
+| 2 | 180° | 上下颠倒 |
+| 3 | 270° | 逆时针旋转 90° |
+
+使用示例：
+```batch
+ppocr.exe ocr --input image.jpg ^
+  --use_doc_orientation_classify true ^
+  --doc_orientation_classify_model_name PP-LCNet_x1_0_doc_ori ^
+  --doc_orientation_classify_model_dir ./models/PP-LCNet_x1_0_doc_ori_infer
+```
 
 ## CPU 特性检测
 

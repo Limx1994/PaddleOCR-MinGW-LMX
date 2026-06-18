@@ -1,0 +1,29 @@
+{
+	"InstallScripts" : 
+	[
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/base/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/algorithm/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/cleanup/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/container/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/debugging/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/flags/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/functional/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/hash/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/memory/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/meta/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/numeric/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/profiling/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/random/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/status/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/strings/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/synchronization/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/time/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/types/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/abseil-cpp/absl/utility/cmake_install.cmake",
+		"D:/tmp/tmp/PaddleOCR/deploy/cpp_infer/build_mingw_dll/third_party/clipper_ver6.4.2/cpp/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

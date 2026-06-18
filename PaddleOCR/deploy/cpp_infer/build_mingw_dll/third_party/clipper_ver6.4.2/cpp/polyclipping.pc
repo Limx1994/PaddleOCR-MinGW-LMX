@@ -1,0 +1,13 @@
+prefix=C:/Program Files (x86)/ppocr
+exec_prefix=C:/Program Files (x86)/ppocr
+libdir=C:/Program Files (x86)/ppocr/lib
+sharedlibdir=C:/Program Files (x86)/ppocr/lib
+includedir=C:/Program Files (x86)/ppocr/include/polyclipping
+
+Name: polyclipping
+Description: polygon clipping library
+Version: 
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lpolyclipping
+Cflags: -I${includedir}

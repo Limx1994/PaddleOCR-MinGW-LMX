@@ -139,6 +139,9 @@ dist/ppocr/models/
 ├── PP-OCRv4_mobile_rec_infer/          # Text recognition model
 │   ├── inference.json                  # or inference.pdmodel
 │   └── inference.pdiparams
+├── PP-LCNet_x1_0_doc_ori_infer/        # Document orientation classifier (4 directions: 0°/90°/180°/270°)
+│   ├── inference.json                  # or inference.pdmodel
+│   └── inference.pdiparams
 └── PP-LCNet_x1_0_textline_ori_infer/   # Text line orientation classifier (optional)
     ├── inference.json                  # or inference.pdmodel
     └── inference.pdiparams
@@ -151,7 +154,27 @@ dist/ppocr/models/
 **Download links:**
 - Text detection: [PP-OCRv4_mobile_det_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv4_mobile_det_infer.tar)
 - Text recognition: [PP-OCRv4_mobile_rec_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv4_mobile_rec_infer.tar)
+- Document orientation: [PP-LCNet_x1_0_doc_ori_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-LCNet_x1_0_doc_ori_infer.tar)
 - Text line orientation: [PP-LCNet_x1_0_textline_ori_infer](https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-LCNet_x1_0_textline_ori_infer.tar)
+
+### Document Orientation Classification
+
+The `PP-LCNet_x1_0_doc_ori` model supports 4-direction classification:
+
+| Class ID | Angle | Description |
+|----------|-------|-------------|
+| 0 | 0° | Normal orientation |
+| 1 | 90° | Rotated 90° clockwise |
+| 2 | 180° | Upside down |
+| 3 | 270° | Rotated 90° counter-clockwise |
+
+Usage:
+```batch
+ppocr.exe ocr --input image.jpg ^
+  --use_doc_orientation_classify true ^
+  --doc_orientation_classify_model_name PP-LCNet_x1_0_doc_ori ^
+  --doc_orientation_classify_model_dir ./models/PP-LCNet_x1_0_doc_ori_infer
+```
 
 ## CPU Feature Detection
 

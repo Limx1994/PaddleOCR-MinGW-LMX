@@ -7,7 +7,7 @@
 1. 下载预编译归档：
 
    ```
-   https://github.com/Limx1994/PaddleOCR-MinGW-LMX/releases/download/v1.0.0/PaddleOCR-MinGW-v1.0.0.tar.gz
+   https://github.com/Limx1994/PaddleOCR-MinGW-LMX/releases/download/v2.0.0/PaddleOCR-MinGW-v2.0.0.tar.gz
    ```
 
 2. 解压后直接运行：
@@ -22,6 +22,19 @@
      --use_doc_orientation_classify false ^
      --use_doc_unwarping false ^
      --use_textline_orientation false
+   ```
+
+3. 启用 4 方向文档分类（可选）：
+
+   ```batch
+   ppocr.exe ocr --input <图片路径> ^
+     --use_doc_orientation_classify true ^
+     --doc_orientation_classify_model_name PP-LCNet_x1_0_doc_ori ^
+     --doc_orientation_classify_model_dir ./models/PP-LCNet_x1_0_doc_ori_infer ^
+     --text_detection_model_dir ./models/PP-OCRv4_mobile_det_infer ^
+     --text_recognition_model_dir ./models/PP-OCRv4_mobile_rec_infer ^
+     --text_detection_model_name PP-OCRv4_mobile_det ^
+     --text_recognition_model_name PP-OCRv4_mobile_rec
    ```
 
 ## 从源码编译
@@ -180,7 +193,15 @@ PaddleOCR-MinGW-LMX/
 ├── scripts/                # 构建脚本
 ├── dist/
 │   ├── ppocr/              # 静态模式运行目录（361MB exe）
+│   │   └── models/
+│   │       ├── PP-OCRv4_mobile_det_infer/   # 文本检测模型
+│   │       ├── PP-OCRv4_mobile_rec_infer/   # 文本识别模型
+│   │       └── PP-LCNet_x1_0_doc_ori_infer/ # 文档方向分类模型（4方向）
 │   └── ppocr_dll/          # DLL 模式运行目录（5.6MB exe + DLL）
+│       └── models/
+│           ├── PP-OCRv4_mobile_det_infer/   # 文本检测模型
+│           ├── PP-OCRv4_mobile_rec_infer/   # 文本识别模型
+│           └── PP-LCNet_x1_0_doc_ori_infer/ # 文档方向分类模型（4方向）
 └── test_images/            # 测试数据
 ```
 

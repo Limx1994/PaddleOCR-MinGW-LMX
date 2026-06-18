@@ -33,7 +33,15 @@ PaddleOCR-MinGW-LMX/
 │   └── distribute_dll.bat  # 分发 DLL 到运行目录
 ├── dist/
 │   ├── ppocr/              # 静态模式运行目录（361MB exe）
+│   │   └── models/
+│   │       ├── PP-OCRv4_mobile_det_infer/   # 文本检测模型
+│   │       ├── PP-OCRv4_mobile_rec_infer/   # 文本识别模型
+│   │       └── PP-LCNet_x1_0_doc_ori_infer/ # 文档方向分类模型（4方向）
 │   └── ppocr_dll/          # DLL 模式运行目录（5.6MB exe + DLL）
+│       └── models/
+│           ├── PP-OCRv4_mobile_det_infer/   # 文本检测模型
+│           ├── PP-OCRv4_mobile_rec_infer/   # 文本识别模型
+│           └── PP-LCNet_x1_0_doc_ori_infer/ # 文档方向分类模型（4方向）
 └── test_images/            # 测试数据
 ```
 

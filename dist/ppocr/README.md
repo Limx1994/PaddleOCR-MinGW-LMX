@@ -8,8 +8,9 @@
 dist/ppocr/
 ├── ppocr.exe                    # 主程序 (361MB, 静态链接模式)
 ├── models/                      # 推理模型目录
-│   ├── PP-OCRv4_mobile_det_infer/   # 文本检测模型 (mobile)
-│   └── PP-OCRv4_mobile_rec_infer/   # 文本识别模型 (mobile)
+│   ├── PP-OCRv4_mobile_det_infer/       # 文本检测模型 (mobile)
+│   ├── PP-OCRv4_mobile_rec_infer/       # 文本识别模型 (mobile)
+│   └── PP-LCNet_x1_0_doc_ori_infer/     # 文档方向分类模型 (4方向: 0°/90°/180°/270°)
 ├── output/                      # 输出目录
 ├── .json                        # 最近一次推理结果
 ├── libopencv_world470.dll       # OpenCV 库
@@ -134,6 +135,20 @@ ppocr.exe ocr --input test.jpg --save_path ./my_output/
 | PP-OCRv4_mobile_det | `./models/PP-OCRv4_mobile_det_infer` | 文本检测 |
 | PP-OCRv4_mobile_rec | `./models/PP-OCRv4_mobile_rec_infer` | 文本识别 |
 
+### PP-LCNet_x1_0_doc_ori (已内置)
+
+文档方向分类模型，支持 4 个方向：
+
+| 模型                  | 路径                                       | 用途         | 精度    |
+| ------------------- | ---------------------------------------- | ---------- | ----- |
+| PP-LCNet_x1_0_doc_ori | `./models/PP-LCNet_x1_0_doc_ori_infer` | 文档方向分类 | 99.06% |
+
+**支持方向**：
+- `0` = 0° (正常方向)
+- `1` = 90° (顺时针旋转 90°)
+- `2` = 180° (上下颠倒)
+- `3` = 270° (逆时针旋转 90°)
+
 ### PP-OCRv5_server (需下载)
 
 高精度服务端模型，需自行下载并放置到 `models/` 目录：
@@ -162,6 +177,21 @@ ppocr.exe ocr --input test.jpg ^
   --text_detection_model_name PP-OCRv4_mobile_det ^
   --text_recognition_model_name PP-OCRv4_mobile_rec
 ```
+
+### 示例 3: 启用 4 方向文档分类
+
+```batch
+ppocr.exe ocr --input test.jpg ^
+  --use_doc_orientation_classify true ^
+  --doc_orientation_classify_model_name PP-LCNet_x1_0_doc_ori ^
+  --doc_orientation_classify_model_dir ./models/PP-LCNet_x1_0_doc_ori_infer ^
+  --text_detection_model_dir ./models/PP-OCRv4_mobile_det_infer ^
+  --text_recognition_model_dir ./models/PP-OCRv4_mobile_rec_infer ^
+  --text_detection_model_name PP-OCRv4_mobile_det ^
+  --text_recognition_model_name PP-OCRv4_mobile_rec
+```
+
+自动检测文档方向（0°/90°/180°/270°）并矫正后识别。
 
 ### 示例 3: 快速模式 (禁用预处理)
 
