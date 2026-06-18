@@ -26,7 +26,6 @@ D:\tmp\tmp\
 │   ├── configs/            # OCR 配置文件
 │   ├── *.dll               # 运行时 DLL
 │   └── models/             # OCR 模型
-├── release/                # 预编译归档
 └── test_images/            # 测试数据
 ```
 
