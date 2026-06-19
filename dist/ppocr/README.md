@@ -5,15 +5,31 @@
 ## 目录结构
 
 ```
-dist/ppocr/
-├── ppocr.exe                    # 主程序 (361MB, 静态链接模式)
+D:\tmp\tmp\dist\ppocr\          # 静态模式 (361MB exe)
+├── ppocr.exe                    # CLI 工具
+├── ppocr_service.exe            # TCP 服务（进程池模式）
+├── ppocr_worker.exe             # Worker 子进程
+├── ppocr_client.exe             # 测试客户端
 ├── models/                      # 推理模型目录
 │   ├── PP-OCRv4_mobile_det_infer/       # 文本检测模型 (mobile)
 │   ├── PP-OCRv4_mobile_rec_infer/       # 文本识别模型 (mobile)
 │   └── PP-LCNet_x1_0_doc_ori_infer/     # 文档方向分类模型 (4方向: 0°/90°/180°/270°)
 ├── output/                      # 输出目录
-├── .json                        # 最近一次推理结果
 ├── libopencv_world470.dll       # OpenCV 库
+└── MinGW 运行时 DLL             # libgcc_s_seh-1.dll, libstdc++-6.dll 等
+
+D:\tmp\tmp\dist\ppocr_dll\     # DLL 模式 (5.4MB exe)
+├── ppocr.exe                    # CLI 工具
+├── ppocr_service.exe            # TCP 服务（进程池模式）
+├── ppocr_worker.exe             # Worker 子进程
+├── ppocr_client.exe             # 测试客户端
+├── models/                      # 推理模型目录
+├── libpaddle_inference.dll      # Paddle 推理库
+├── libphi_core.dll              # Paddle Phi 核心库
+├── libpir.dll                   # Paddle IR 库
+├── libcommon.dll                # Paddle 基础库
+├── libopencv_world470.dll       # OpenCV 库
+├── libpolyclipping.dll          # Clipper 库
 └── MinGW 运行时 DLL             # libgcc_s_seh-1.dll, libstdc++-6.dll 等
 ```
 
@@ -139,11 +155,12 @@ ppocr.exe ocr --input test.jpg --save_path ./my_output/
 
 文档方向分类模型，支持 4 个方向：
 
-| 模型                  | 路径                                       | 用途         | 精度    |
-| ------------------- | ---------------------------------------- | ---------- | ----- |
+| 模型                    | 路径                                     | 用途     | 精度     |
+| --------------------- | -------------------------------------- | ------ | ------ |
 | PP-LCNet_x1_0_doc_ori | `./models/PP-LCNet_x1_0_doc_ori_infer` | 文档方向分类 | 99.06% |
 
 **支持方向**：
+
 - `0` = 0° (正常方向)
 - `1` = 90° (顺时针旋转 90°)
 - `2` = 180° (上下颠倒)
@@ -268,6 +285,28 @@ for %%f in (*.jpg) do (
 
 > **提示**: 对于 PP-OCRv4_mobile 模型，`paddle` 模式 (默认) 比 `mkldnn` 模式快约 2 倍。仅在使用大型 server 模型时考虑启用 mkldnn。
 
+## 故障排除
+
+### 服务启动失败
+
+如果服务启动后立即退出，检查：
+
+1. 模型目录是否存在
+2. MinGW 运行时 DLL 版本是否匹配（必须使用 toolchain 目录中的 DLL）
+3. 端口是否被占用
+
+### DLL 模式启动失败（exit code 127 或 exception c0000139）
+
+这是由于 MinGW 运行时 DLL 版本不匹配导致的。解决方案：
+
+```batch
+# 从 toolchain 目录复制正确的 DLL
+cp toolchain\mingw\bin\libgcc_s_seh-1.dll dist\ppocr_dll\
+cp toolchain\mingw\bin\libstdc++-6.dll dist\ppocr_dll\
+cp toolchain\mingw\bin\libwinpthread-1.dll dist\ppocr_dll\
+cp toolchain\mingw\bin\libgomp-1.dll dist\ppocr_dll\
+```
+
 ## 常见问题
 
 ### Q: 如何切换到 mkldnn 模式？
@@ -308,9 +347,45 @@ ppocr.exe ocr --input test.jpg ^
 
 Windows 下中文路径需要使用 UTF-8 编码的命令行。如果遇到问题，可以将图片复制到英文路径下。
 
+## 服务模式
+
+服务模式支持多次 OCR 请求而无需重启进程。采用进程池架构，每个 worker 进程独立处理 OCR。
+
+### 启动服务
+
+```batch
+# 静态模式
+cd D:\tmp\tmp\dist\ppocr
+ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
+
+# DLL 模式
+cd D:\tmp\tmp\dist\ppocr_dll
+ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
+```
+
+### 发送请求
+
+```batch
+ppocr_client.exe <图片路径> 127.0.0.1 8081
+```
+
+### 服务参数
+
+| 参数                      | 默认值       | 说明                  |
+| ----------------------- | --------- | ------------------- |
+| `--host`                | 127.0.0.1 | 监听地址                |
+| `--port`                | 8080      | 监听端口                |
+| `--model_dir`           | （必填）      | 模型目录                |
+| `--pool_size`           | 2         | Worker 进程数          |
+| `--cpu_threads`         | 8         | 每个 worker 的 CPU 线程数 |
+| `--use_doc_orientation` | true      | 使用文档方向分类            |
+
 ## 编译说明
 
-本工具使用 MinGW GCC 11.2.0 编译，采用静态链接模式（361MB）。Paddle 推理库、OpenCV 和 oneDNN 均静态链接到可执行文件中，运行时仅需 MinGW 运行时 DLL。
+本工具使用 MinGW GCC 11.2.0 编译，支持两种模式：
+
+- **静态模式**（361MB）：Paddle 推理库、OpenCV 和 oneDNN 均静态链接到可执行文件中，运行时仅需 MinGW 运行时 DLL
+- **DLL 模式**（5.4MB）：Paddle 推理库作为 DLL 加载，需要 Paddle DLL + OpenCV DLL + MinGW 运行时 DLL
 
 详细编译说明请参考项目根目录的 `BUILD_GUIDE.md`。
 
