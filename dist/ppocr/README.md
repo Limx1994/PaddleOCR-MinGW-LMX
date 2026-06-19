@@ -389,7 +389,7 @@ ppocr_client.exe <图片路径> 127.0.0.1 8081
 | `--cpu_threads`         | 8         | 每个 worker 的 CPU 线程数 |
 | `--use_doc_orientation` | true      | 使用文档方向分类            |
 | `--fast_detect`         | none      | 快速检测模式：none, yolo   |
-| `--plate_model`         | 空         | 车牌检测 ONNX 模型路径     |
+| `--plate_model`         | 空         | 车牌检测 ONNX 模型路径      |
 
 ## 快速检测模式（车牌场景）
 
@@ -415,14 +415,15 @@ ppocr_client.exe test.jpg 127.0.0.1 8080
 
 ### 性能对比
 
-| 方案 | 检测耗时 | 识别耗时 | 总耗时 |
-|------|---------|---------|--------|
-| 完整 OCR 流程 | ~500ms | ~1.5s | ~2s |
-| RT-DETR 快速检测 | ~10ms | ~0.1ms | ~10ms |
+| 方案           | 检测耗时   | 识别耗时   | 总耗时   |
+| ------------ | ------ | ------ | ----- |
+| 完整 OCR 流程    | ~500ms | ~1.5s  | ~2s   |
+| RT-DETR 快速检测 | ~10ms  | ~0.1ms | ~10ms |
 
 ### 模型要求
 
 需要准备 RT-DETR 车牌检测 ONNX 模型（`plate_rtdetr.onnx`），可从以下来源获取：
+
 - [Hugging Face - RT-DETR License Plate Detection](https://huggingface.co/Topurrra/rtdetr-license-plate-detection-onnx)
 
 模型输入：640x640 RGB 图像

@@ -4,12 +4,12 @@
 
 ## 与静态模式的区别
 
-| 项目 | DLL 模式（本目录） | 静态模式（dist/ppocr/） |
-|------|------------------|----------------------|
-| ppocr.exe 大小 | 5.6MB | ~390MB |
-| 运行时 DLL | 14 个 DLL | 7 个 DLL |
-| 部署复杂度 | 需要所有 DLL | DLL 较少 |
-| 更新便利性 | 可单独更新 DLL | 需重新编译 |
+| 项目           | DLL 模式（本目录） | 静态模式（dist/ppocr/） |
+| ------------ | ----------- | ----------------- |
+| ppocr.exe 大小 | 5.6MB       | ~390MB            |
+| 运行时 DLL      | 14 个 DLL    | 7 个 DLL           |
+| 部署复杂度        | 需要所有 DLL    | DLL 较少            |
+| 更新便利性        | 可单独更新 DLL   | 需重新编译             |
 
 ## 目录结构
 
@@ -93,18 +93,18 @@ ppocr.exe ocr --input test.jpg ^
 
 ## 命令行参数
 
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `--input` | 输入图片路径 | 必填 |
-| `--text_detection_model_dir` | 文字检测模型目录 | 空 |
-| `--text_recognition_model_dir` | 文字识别模型目录 | 空 |
-| `--text_detection_model_name` | 检测模型名称 | PP-OCRv5_server_det |
-| `--text_recognition_model_name` | 识别模型名称 | PP-OCRv5_server_rec |
-| `--use_doc_orientation_classify` | 是否使用文档方向分类 | true |
-| `--use_doc_unwarping` | 是否使用文档去畸变 | true |
-| `--use_textline_orientation` | 是否使用文本行方向分类 | true |
-| `--cpu_threads` | CPU 线程数 | 8 |
-| `--thread_num` | Pipeline 并行数 | 4 |
+| 参数                               | 说明           | 默认值                 |
+| -------------------------------- | ------------ | ------------------- |
+| `--input`                        | 输入图片路径       | 必填                  |
+| `--text_detection_model_dir`     | 文字检测模型目录     | 空                   |
+| `--text_recognition_model_dir`   | 文字识别模型目录     | 空                   |
+| `--text_detection_model_name`    | 检测模型名称       | PP-OCRv5_server_det |
+| `--text_recognition_model_name`  | 识别模型名称       | PP-OCRv5_server_rec |
+| `--use_doc_orientation_classify` | 是否使用文档方向分类   | true                |
+| `--use_doc_unwarping`            | 是否使用文档去畸变    | true                |
+| `--use_textline_orientation`     | 是否使用文本行方向分类  | true                |
+| `--cpu_threads`                  | CPU 线程数      | 8                   |
+| `--thread_num`                   | Pipeline 并行数 | 4                   |
 
 ## 服务模式
 
@@ -130,16 +130,16 @@ ppocr_client.exe <图片路径> 127.0.0.1 8081
 
 ### 服务参数
 
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| `--host` | 127.0.0.1 | 监听地址 |
-| `--port` | 8080 | 监听端口 |
-| `--model_dir` | （必填） | 模型目录 |
-| `--pool_size` | 2 | Worker 进程数 |
-| `--cpu_threads` | 8 | 每个 worker 的 CPU 线程数 |
-| `--use_doc_orientation` | true | 使用文档方向分类 |
-| `--fast_detect` | none | 快速检测模式：none, yolo |
-| `--plate_model` | 空 | 车牌检测 ONNX 模型路径 |
+| 参数                      | 默认值       | 说明                  |
+| ----------------------- | --------- | ------------------- |
+| `--host`                | 127.0.0.1 | 监听地址                |
+| `--port`                | 8080      | 监听端口                |
+| `--model_dir`           | （必填）      | 模型目录                |
+| `--pool_size`           | 2         | Worker 进程数          |
+| `--cpu_threads`         | 8         | 每个 worker 的 CPU 线程数 |
+| `--use_doc_orientation` | true      | 使用文档方向分类            |
+| `--fast_detect`         | none      | 快速检测模式：none, yolo   |
+| `--plate_model`         | 空         | 车牌检测 ONNX 模型路径      |
 
 ## 快速检测模式（车牌场景）
 
@@ -165,14 +165,15 @@ ppocr_client.exe test.jpg 127.0.0.1 8080
 
 ### 性能对比
 
-| 方案 | 检测耗时 | 识别耗时 | 总耗时 |
-|------|---------|---------|--------|
-| 完整 OCR 流程 | ~500ms | ~1.5s | ~2s |
-| RT-DETR 快速检测 | ~10ms | ~0.1ms | ~10ms |
+| 方案           | 检测耗时   | 识别耗时   | 总耗时   |
+| ------------ | ------ | ------ | ----- |
+| 完整 OCR 流程    | ~500ms | ~1.5s  | ~2s   |
+| RT-DETR 快速检测 | ~10ms  | ~0.1ms | ~10ms |
 
 ### 模型要求
 
 需要准备 RT-DETR 车牌检测 ONNX 模型（`plate_rtdetr.onnx`），可从以下来源获取：
+
 - [Hugging Face - RT-DETR License Plate Detection](https://huggingface.co/Topurrra/rtdetr-license-plate-detection-onnx)
 
 模型输入：640x640 RGB 图像
@@ -182,11 +183,11 @@ ppocr_client.exe test.jpg 127.0.0.1 8080
 
 测试环境：Intel CPU, 20 逻辑处理器, PP-OCRv4_mobile 模型, 800×1079 图片
 
-| 模式 | 耗时 |
-|------|------|
+| 模式        | 耗时     |
+| --------- | ------ |
 | 单次模式（CLI） | ~1.57s |
-| 服务模式 | ~0.28s |
-| 快速检测模式 | ~0.3s |
+| 服务模式      | ~0.28s |
+| 快速检测模式    | ~0.3s  |
 
 服务模式比单次模式快 5.6 倍（省去模型加载时间）。
 
@@ -219,6 +220,7 @@ A: 可以，将 Paddle DLL 放到系统 PATH 目录下即可共享。
 ### Q: 快速检测模式报错 "Failed to initialize PlateDetector"
 
 A: 确保：
+
 1. `plate_rtdetr.onnx` 模型文件存在于 `models/` 目录
 2. `onnxruntime.dll` 和 `onnxruntime_providers_shared.dll` 存在
 3. 模型文件格式正确（RT-DETR 格式）
