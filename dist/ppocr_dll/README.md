@@ -15,7 +15,10 @@
 
 ```
 dist/ppocr_dll/
-├── ppocr.exe                    # 主程序 (5.6MB)
+├── ppocr.exe                    # CLI 工具 (5.6MB)
+├── ppocr_service.exe            # TCP 服务（进程池模式）
+├── ppocr_worker.exe             # Worker 子进程
+├── ppocr_client.exe             # 测试客户端
 ├── libcommon.dll                # Paddle 基础库 (~413K)
 ├── libpir.dll                   # Paddle IR (~2.7M)
 ├── libphi_core.dll              # Paddle Phi (~194M)
@@ -35,6 +38,8 @@ dist/ppocr_dll/
 ```
 
 ## 快速开始
+
+> **重要**：使用 PP-OCRv4_mobile 模型时，必须指定 `--text_detection_model_name PP-OCRv4_mobile_det` 和 `--text_recognition_model_name PP-OCRv4_mobile_rec`。默认模型名称为 `PP-OCRv5_server_det`/`PP-OCRv5_server_rec`，如果未安装 server 模型会加载失败。
 
 ### 基本用法
 
@@ -91,20 +96,62 @@ ppocr.exe ocr --input test.jpg ^
 | `--cpu_threads` | CPU 线程数 | 8 |
 | `--thread_num` | Pipeline 并行数 | 4 |
 
+## 服务模式
+
+服务模式支持多次 OCR 请求而无需重启进程。采用进程池架构，每个 worker 进程独立处理 OCR。
+
+### 启动服务
+
+```batch
+cd D:\tmp\tmp\dist\ppocr_dll
+ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
+```
+
+### 发送请求
+
+```batch
+ppocr_client.exe <图片路径> 127.0.0.1 8081
+```
+
+### 服务参数
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `--host` | 127.0.0.1 | 监听地址 |
+| `--port` | 8080 | 监听端口 |
+| `--model_dir` | （必填） | 模型目录 |
+| `--pool_size` | 2 | Worker 进程数 |
+| `--cpu_threads` | 8 | 每个 worker 的 CPU 线程数 |
+| `--use_doc_orientation` | true | 使用文档方向分类 |
+
 ## 性能数据
 
 测试环境：Intel CPU, 20 逻辑处理器, PP-OCRv4_mobile 模型, 800×1079 图片
 
-| 场景 | paddle 模式 | mkldnn 模式 |
-|------|-----------|-----------|
-| 单张图片 | 1.61s | 1.68s |
-| 10 张图片 | 1.63s | 3.55s |
+| 模式 | 耗时 |
+|------|------|
+| 单次模式（CLI） | ~1.57s |
+| 服务模式 | ~0.28s |
+
+服务模式比单次模式快 5.6 倍（省去模型加载时间）。
 
 ## 常见问题
 
 ### Q: 启动时报 DLL 缺失错误
 
 A: 确保所有 10 个 DLL 文件都在 ppocr.exe 同一目录下。
+
+### Q: 启动时报 exit code 127 或 exception c0000139
+
+A: 这是 MinGW 运行时 DLL 版本不匹配导致的。解决方案：
+
+```batch
+# 从 toolchain 目录复制正确的 DLL
+cp toolchain\mingw\bin\libgcc_s_seh-1.dll dist\ppocr_dll\
+cp toolchain\mingw\bin\libstdc++-6.dll dist\ppocr_dll\
+cp toolchain\mingw\bin\libwinpthread-1.dll dist\ppocr_dll\
+cp toolchain\mingw\bin\libgomp-1.dll dist\ppocr_dll\
+```
 
 ### Q: 如何更新 Paddle 推理库？
 
