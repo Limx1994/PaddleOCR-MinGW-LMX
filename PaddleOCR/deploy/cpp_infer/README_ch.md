@@ -65,6 +65,8 @@ DLL 模式运行时需要 10 个 DLL 文件：
 
 ## 运行推理
 
+> **重要**：使用 PP-OCRv4_mobile 模型时，必须指定 `--text_detection_model_name PP-OCRv4_mobile_det` 和 `--text_recognition_model_name PP-OCRv4_mobile_rec`。默认模型名称为 `PP-OCRv5_server_det`/`PP-OCRv5_server_rec`，如果未安装 server 模型会加载失败。
+
 ### 通用 OCR（静态模式）
 
 ```batch

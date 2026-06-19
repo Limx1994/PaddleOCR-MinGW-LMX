@@ -24,6 +24,9 @@ if "%1"=="--dll" (
     echo ========================================
 )
 
+:: Set PATH to use toolchain GCC first
+set PATH=%MINGW_DIR%\bin;%PATH%
+
 :: Check toolchain
 if not exist "%MINGW_DIR%\bin\gcc.exe" (
     echo ERROR: MinGW GCC not found at %MINGW_DIR%\bin\gcc.exe
@@ -77,7 +80,8 @@ echo Running CMake...
     -DPADDLE_LIB=%PADDLE_LIB% ^
     -DOPENCV_DIR=%OPENCV_DIR% ^
     -DWITH_STATIC_LIB=%USE_STATIC% ^
-    -DWITH_DLL_LIB=%USE_DLL%
+    -DWITH_DLL_LIB=%USE_DLL% ^
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 
 if errorlevel 1 (
     echo ERROR: CMake configuration failed

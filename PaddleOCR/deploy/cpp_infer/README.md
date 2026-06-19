@@ -65,6 +65,8 @@ DLL mode requires 10 DLL files in the runtime directory:
 
 ## Run Inference
 
+> **Important**: When using PP-OCRv4_mobile models, you must specify `--text_detection_model_name PP-OCRv4_mobile_det` and `--text_recognition_model_name PP-OCRv4_mobile_rec`. The default model names are `PP-OCRv5_server_det`/`PP-OCRv5_server_rec`, which will fail if the server models are not installed.
+
 ### General OCR (Static Mode)
 
 ```batch

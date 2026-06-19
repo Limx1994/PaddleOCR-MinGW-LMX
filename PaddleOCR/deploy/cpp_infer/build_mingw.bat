@@ -9,6 +9,9 @@ set PADDLE_LIB=%ROOT_DIR%\libs\paddle_inference_gcc
 set OPENCV_DIR=%ROOT_DIR%\libs\opencv_install_gcc
 set SOURCE_DIR=%SCRIPT_DIR%
 
+:: 确保使用工具链中的 GCC（避免系统 PATH 中的其他版本）
+set PATH=%MINGW_DIR%\bin;%PATH%
+
 :: 查找 cmake：优先 toolchain，回退系统 PATH
 set CMAKE_EXE=%ROOT_DIR%\toolchain\mingw\bin\cmake.exe
 if not exist "%CMAKE_EXE%" (
