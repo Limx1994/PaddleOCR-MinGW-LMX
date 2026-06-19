@@ -11,6 +11,7 @@ This document describes how to build and run the PaddleOCR C++ inference engine 
 - [Run Inference](#run-inference)
   - [General OCR](#general-ocr)
   - [License Plate Recognition](#license-plate-recognition)
+  - [Service Mode (Process Pool)](#service-mode-process-pool)
 - [Model Preparation](#model-preparation)
 - [Known Issues](#known-issues)
 - [Troubleshooting](#troubleshooting)
@@ -43,7 +44,7 @@ This document describes how to build and run the PaddleOCR C++ inference engine 
    build_mingw.bat
    ```
 
-3. **Output**: `build_mingw\ppocr.exe`
+3. **Output**: `D:\tmp\tmp\dist\ppocr\` (ppocr.exe, ppocr_service.exe, ppocr_worker.exe, ppocr_client.exe)
 
 ### Build with DLL Mode
 
@@ -54,7 +55,7 @@ cd PaddleOCR\deploy\cpp_infer
 build_mingw.bat --dll
 ```
 
-Output: `build_mingw_dll\ppocr.exe` (5.6MB, requires DLLs in runtime directory)
+Output: `D:\tmp\tmp\dist\ppocr_dll\` (ppocr.exe, ppocr_service.exe, ppocr_worker.exe, ppocr_client.exe + DLLs)
 
 DLL mode requires 10 DLL files in the runtime directory:
 - `libcommon.dll`, `libpir.dll`, `libphi_core.dll`, `libpaddle_inference.dll` (Paddle)
@@ -126,6 +127,76 @@ Example output (license plate: `赣G·0522Y`):
   "rec_scores": [0.999318]
 }
 ```
+
+### Service Mode (Process Pool)
+
+The service mode allows multiple OCR requests without restarting the process. It uses a process pool architecture where each worker process handles OCR independently.
+
+**Build (Static Mode):**
+
+```batch
+cd PaddleOCR\deploy\cpp_infer
+build_mingw.bat
+```
+
+Output: `D:\tmp\tmp\dist\ppocr\` (ppocr_service.exe, ppocr_worker.exe, ppocr_client.exe)
+
+**Build (DLL Mode):**
+
+```batch
+cd PaddleOCR\deploy\cpp_infer
+build_mingw.bat --dll
+```
+
+Output: `D:\tmp\tmp\dist\ppocr_dll\` (ppocr_service.exe, ppocr_worker.exe, ppocr_client.exe + DLLs)
+
+**Start service (Static Mode):**
+
+```batch
+cd D:\tmp\tmp\dist\ppocr
+ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
+```
+
+**Start service (DLL Mode):**
+
+```batch
+cd D:\tmp\tmp\dist\ppocr_dll
+ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
+```
+
+**Service parameters:**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--host` | 127.0.0.1 | Listen address |
+| `--port` | 8080 | Listen port |
+| `--model_dir` | (required) | Model directory |
+| `--pool_size` | 2 | Number of worker processes |
+| `--cpu_threads` | 8 | CPU threads per worker |
+| `--use_doc_orientation` | true | Use document orientation classification |
+
+**Send request:**
+
+```batch
+ppocr_client.exe <image_path> <host> <port>
+```
+
+**Architecture:**
+
+```
+ppocr_service.exe (main process)
+├── TCP Server (accepts client connections)
+├── Process Pool (manages N worker processes)
+│   ├── ppocr_worker.exe (stdin/stdout pipe)
+│   └── ppocr_worker.exe (stdin/stdout pipe)
+└── Request Router (distributes requests to idle workers)
+```
+
+**Key features:**
+- Worker processes are independent - Paddle runtime state doesn't affect each other
+- Automatic restart if a worker crashes
+- Supports multiple concurrent requests
+- ~200ms per request (after models loaded)
 
 ## Model Preparation
 
@@ -232,3 +303,13 @@ For PP-OCRv4_mobile models, `paddle` mode is ~2× faster. For larger models (ser
 ### Link errors with multiple definitions
 - The build uses `-Wl,--allow-multiple-definition` to handle symbol conflicts
 - If new conflicts arise, add object files to the merge list in CMakeLists.txt
+
+### DLL mode service fails to start (exit code 127 or exception c0000139)
+- This is caused by MinGW runtime DLL version mismatch
+- Solution: Copy correct DLLs from toolchain directory:
+  ```batch
+  cp toolchain\mingw\bin\libgcc_s_seh-1.dll dist\ppocr_dll\
+  cp toolchain\mingw\bin\libstdc++-6.dll dist\ppocr_dll\
+  cp toolchain\mingw\bin\libwinpthread-1.dll dist\ppocr_dll\
+  cp toolchain\mingw\bin\libgomp-1.dll dist\ppocr_dll\
+  ```

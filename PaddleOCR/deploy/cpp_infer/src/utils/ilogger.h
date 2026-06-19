@@ -37,6 +37,7 @@
 #pragma once
 
 #include <time.h>
+#include <cstdint>
 
 #include <string>
 #include <tuple>

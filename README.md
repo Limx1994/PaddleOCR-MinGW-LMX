@@ -32,6 +32,10 @@ PaddleOCR-MinGW-LMX/
 │   └── distribute_dll.bat  # 分发 DLL 到运行目录
 ├── dist/
 │   ├── ppocr/              # 静态模式运行目录（361MB exe）
+│   │   ├── ppocr.exe       # CLI 工具
+│   │   ├── ppocr_service.exe # TCP 服务（进程池模式）
+│   │   ├── ppocr_worker.exe  # Worker 子进程
+│   │   ├── ppocr_client.exe  # 测试客户端
 │   │   └── models/
 │   │       ├── PP-OCRv4_mobile_det_infer/   # 文本检测模型
 │   │       ├── PP-OCRv4_mobile_rec_infer/   # 文本识别模型
@@ -48,8 +52,17 @@ PaddleOCR-MinGW-LMX/
 
 | 模式 | ppocr.exe 大小 | 运行时依赖 | 适用场景 |
 |------|---------------|-----------|---------|
-| 静态模式 | 361MB | MinGW 运行时 DLL | 简单部署，单文件 |
+| 静态模式 | 361MB | MinGW 运行时 DLL | 简单部署，单文件，含服务模式 |
 | DLL 模式 | 5.6MB | Paddle 4 DLL + OpenCV + MinGW | 小体积，多项目共享 |
+
+### 构建产物
+
+| 可执行文件 | 说明 |
+|-----------|------|
+| ppocr.exe | CLI 工具，单次 OCR 识别 |
+| ppocr_service.exe | TCP 服务，支持多次请求（进程池架构） |
+| ppocr_worker.exe | Worker 子进程，由 ppocr_service 管理 |
+| ppocr_client.exe | 测试客户端 |
 
 ## 快速开始
 
@@ -84,6 +97,39 @@ ppocr.exe ocr --input ..\..\test_images\test.jpg ^
   "rec_boxes": [[308, 686, 523, 756], [557, 692, 566, 701]]
 }
 ```
+
+### 服务模式（进程池）
+
+服务模式支持多次 OCR 请求而无需重启进程。采用进程池架构，每个 worker 进程独立处理 OCR。
+
+```batch
+# 静态模式
+cd D:\tmp\tmp\dist\ppocr
+ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
+
+# DLL 模式
+cd D:\tmp\tmp\dist\ppocr_dll
+ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
+
+# 发送请求
+ppocr_client.exe test.jpg 127.0.0.1 8081
+```
+
+**架构：**
+```
+ppocr_service.exe（主进程）
+├── TCP Server
+├── Process Pool（管理 N 个 worker 进程）
+│   ├── ppocr_worker.exe（独立进程）
+│   └── ppocr_worker.exe（独立进程）
+└── Request Router
+```
+
+**核心特性：**
+- 进程隔离 - Paddle 运行时状态互不影响
+- 支持多次请求，不会崩溃
+- Worker 崩溃自动重启
+- 每次请求约 200ms
 
 ## 从源码编译
 
@@ -245,6 +291,7 @@ build_mingw.bat
 - **DLL 共享库**：已通过 4-DLL 拆分模式解决（common/pir/phi_core/paddle_inference）
 - **CMake 4.x 兼容性**：需要 `-DCMAKE_POLICY_VERSION_MINIMUM=3.5`
 - **GCC 版本兼容**：GCC 11.2.0 编译的预编译库不能用 GCC 16.1.0 的运行时库链接
+- **DLL 模式服务启动失败**：MinGW 运行时 DLL 版本不匹配，需从 toolchain 目录复制正确版本
 
 ## 性能数据
 

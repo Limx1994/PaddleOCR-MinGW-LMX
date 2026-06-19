@@ -11,6 +11,7 @@
 - [运行推理](#运行推理)
   - [通用 OCR](#通用-ocr)
   - [车牌识别](#车牌识别)
+  - [服务模式（进程池）](#服务模式进程池)
 - [模型准备](#模型准备)
 - [已知问题](#已知问题)
 - [故障排除](#故障排除)
@@ -43,7 +44,7 @@
    build_mingw.bat
    ```
 
-3. **输出文件**：`build_mingw\ppocr.exe`
+3. **输出目录**：`D:\tmp\tmp\dist\ppocr\`（ppocr.exe、ppocr_service.exe、ppocr_worker.exe、ppocr_client.exe）
 
 ### DLL 模式编译
 
@@ -54,7 +55,7 @@ cd PaddleOCR\deploy\cpp_infer
 build_mingw.bat --dll
 ```
 
-输出：`build_mingw_dll\ppocr.exe`（5.6MB，需要 DLL 在运行目录中）
+输出目录：`D:\tmp\tmp\dist\ppocr_dll\`（ppocr.exe、ppocr_service.exe、ppocr_worker.exe、ppocr_client.exe + DLL）
 
 DLL 模式运行时需要 10 个 DLL 文件：
 - `libcommon.dll`, `libpir.dll`, `libphi_core.dll`, `libpaddle_inference.dll`（Paddle）
@@ -118,6 +119,76 @@ ppocr.exe ocr --input <车牌图片> ^
   "rec_scores": [0.999318]
 }
 ```
+
+### 服务模式（进程池）
+
+服务模式支持多次 OCR 请求而无需重启进程。采用进程池架构，每个 worker 进程独立处理 OCR。
+
+**编译（静态模式）：**
+
+```batch
+cd PaddleOCR\deploy\cpp_infer
+build_mingw.bat
+```
+
+输出目录：`D:\tmp\tmp\dist\ppocr\`（ppocr_service.exe、ppocr_worker.exe、ppocr_client.exe）
+
+**编译（DLL 模式）：**
+
+```batch
+cd PaddleOCR\deploy\cpp_infer
+build_mingw.bat --dll
+```
+
+输出目录：`D:\tmp\tmp\dist\ppocr_dll\`（ppocr_service.exe、ppocr_worker.exe、ppocr_client.exe + DLL）
+
+**启动服务（静态模式）：**
+
+```batch
+cd D:\tmp\tmp\dist\ppocr
+ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
+```
+
+**启动服务（DLL 模式）：**
+
+```batch
+cd D:\tmp\tmp\dist\ppocr_dll
+ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
+```
+
+**服务参数：**
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `--host` | 127.0.0.1 | 监听地址 |
+| `--port` | 8080 | 监听端口 |
+| `--model_dir` | （必填） | 模型目录 |
+| `--pool_size` | 2 | Worker 进程数 |
+| `--cpu_threads` | 8 | 每个 worker 的 CPU 线程数 |
+| `--use_doc_orientation` | true | 使用文档方向分类 |
+
+**发送请求：**
+
+```batch
+ppocr_client.exe <图片路径> <主机> <端口>
+```
+
+**架构：**
+
+```
+ppocr_service.exe（主进程）
+├── TCP Server（接受客户端连接）
+├── Process Pool（管理 N 个 worker 进程）
+│   ├── ppocr_worker.exe（stdin/stdout 管道）
+│   └── ppocr_worker.exe（stdin/stdout 管道）
+└── Request Router（分配请求到空闲 worker）
+```
+
+**核心特性：**
+- Worker 进程相互独立 - Paddle 运行时状态互不影响
+- Worker 崩溃自动重启
+- 支持多个并发请求
+- 每次请求约 200ms（模型加载后）
 
 ## 模型准备
 
@@ -213,3 +284,13 @@ Features: SSE SSE2 SSE3 SSSE3 SSE4.1 SSE4.2 AVX AVX2 FMA F16C BMI1 BMI2 POPCNT A
 ### 多重定义链接错误
 - 构建使用 `-Wl,--allow-multiple-definition` 处理符号冲突
 - 如出现新的冲突，请在 CMakeLists.txt 中添加对象文件到合并列表
+
+### DLL 模式服务启动失败（exit code 127 或 exception c0000139）
+- 这是由于 MinGW 运行时 DLL 版本不匹配导致的
+- 解决方案：从 toolchain 目录复制正确的 DLL：
+  ```batch
+  cp toolchain\mingw\bin\libgcc_s_seh-1.dll dist\ppocr_dll\
+  cp toolchain\mingw\bin\libstdc++-6.dll dist\ppocr_dll\
+  cp toolchain\mingw\bin\libwinpthread-1.dll dist\ppocr_dll\
+  cp toolchain\mingw\bin\libgomp-1.dll dist\ppocr_dll\
+  ```

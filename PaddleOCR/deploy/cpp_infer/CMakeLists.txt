@@ -6,6 +6,9 @@ set(DEMO_NAME "ppocr")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Output directory will be set after WITH_DLL_LIB option is defined
+# Default to static mode output directory
+
 option(WITH_MKL        "Compile demo with MKL/OpenBlas support, default use MKL."       ON)
 option(WITH_GPU        "Compile demo with GPU/CPU, default use CPU."                    OFF)
 option(WITH_STATIC_LIB "Compile demo with static/shared library, default use static."   ON)
@@ -269,6 +272,17 @@ endif()
 # Note: libpaddle_inference_api.so/a must put before libpaddle_inference.so/a
 option(WITH_DLL_LIB "Compile demo with DLL library (6-DLL split), default use static." OFF)
 
+# Set output directory based on build mode
+if(WITH_DLL_LIB)
+    set(DIST_OUTPUT_DIR "D:/tmp/tmp/dist/ppocr_dll")
+else()
+    set(DIST_OUTPUT_DIR "D:/tmp/tmp/dist/ppocr")
+endif()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DIST_OUTPUT_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${DIST_OUTPUT_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${DIST_OUTPUT_DIR})
+message(STATUS "Output directory: ${DIST_OUTPUT_DIR}")
+
 if(WITH_STATIC_LIB AND NOT WITH_DLL_LIB)
   if(MINGW)
     set(DEPS
@@ -414,13 +428,72 @@ set(SRCS cli.cc stubs.cc)
 add_executable(${DEMO_NAME} ${SRCS} ${SRC_LIST} )
 target_link_libraries(${DEMO_NAME} ${DEPS} )
 
+# Copy DLLs to dist/ppocr directory after build
+set(DIST_DIR ${DIST_OUTPUT_DIR})
+
 if (WIN32 AND WITH_MKL)
     add_custom_command(TARGET ${DEMO_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PADDLE_LIB}/third_party/install/mklml/lib/mklml.dll ./mklml.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PADDLE_LIB}/third_party/install/mklml/lib/libiomp5md.dll ./libiomp5md.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PADDLE_LIB}/third_party/install/onednn/lib/mkldnn.dll ./mkldnn.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PADDLE_LIB}/third_party/install/mklml/lib/mklml.dll ./release/mklml.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PADDLE_LIB}/third_party/install/mklml/lib/libiomp5md.dll ./release/libiomp5md.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PADDLE_LIB}/third_party/install/onednn/lib/mkldnn.dll ./release/mkldnn.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PADDLE_LIB}/third_party/install/mklml/lib/mklml.dll ${DIST_DIR}/mklml.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PADDLE_LIB}/third_party/install/mklml/lib/libiomp5md.dll ${DIST_DIR}/libiomp5md.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PADDLE_LIB}/third_party/install/onednn/lib/mkldnn.dll ${DIST_DIR}/mkldnn.dll
     )
 endif()
+
+# Copy MinGW runtime DLLs to dist directory
+if(MINGW)
+    # Use CMAKE_C_COMPILER to find MinGW bin directory
+    get_filename_component(MINGW_BIN_DIR ${CMAKE_C_COMPILER} DIRECTORY)
+    message(STATUS "MinGW bin dir: ${MINGW_BIN_DIR}")
+    add_custom_command(TARGET ${DEMO_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MINGW_BIN_DIR}/libgcc_s_seh-1.dll ${DIST_DIR}/libgcc_s_seh-1.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MINGW_BIN_DIR}/libstdc++-6.dll ${DIST_DIR}/libstdc++-6.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MINGW_BIN_DIR}/libwinpthread-1.dll ${DIST_DIR}/libwinpthread-1.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MINGW_BIN_DIR}/libgomp-1.dll ${DIST_DIR}/libgomp-1.dll
+    )
+    # Also copy to build directory for local testing
+    add_custom_command(TARGET ${DEMO_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MINGW_BIN_DIR}/libgcc_s_seh-1.dll ${CMAKE_BINARY_DIR}/libgcc_s_seh-1.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MINGW_BIN_DIR}/libstdc++-6.dll ${CMAKE_BINARY_DIR}/libstdc++-6.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MINGW_BIN_DIR}/libwinpthread-1.dll ${CMAKE_BINARY_DIR}/libwinpthread-1.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${MINGW_BIN_DIR}/libgomp-1.dll ${CMAKE_BINARY_DIR}/libgomp-1.dll
+    )
+endif()
+
+# Service target
+set(SERVICE_NAME "ppocr_service")
+set(SERVICE_SRCS
+    service/service_main.cc
+    service/service_core.cc
+    service/tcp_server.cc
+    service/protocol.cc
+    service/base64_utils.cc
+    service/process_pool.cc
+    service/worker_process.cc
+)
+add_executable(${SERVICE_NAME} ${SERVICE_SRCS} ${SRC_LIST})
+target_include_directories(${SERVICE_NAME} PRIVATE ${THIRD_PARTY_PATH})
+target_link_libraries(${SERVICE_NAME} ${DEPS})
+if(WIN32)
+    target_link_libraries(${SERVICE_NAME} bcrypt)
+endif()
+
+# Worker target (child process for OCR)
+set(WORKER_NAME "ppocr_worker")
+set(WORKER_SRCS
+    service/worker_main.cc
+)
+add_executable(${WORKER_NAME} ${WORKER_SRCS} ${SRC_LIST})
+target_include_directories(${WORKER_NAME} PRIVATE ${THIRD_PARTY_PATH})
+target_link_libraries(${WORKER_NAME} ${DEPS})
+
+# Client target (standalone, no Paddle dependency)
+set(CLIENT_NAME "ppocr_client")
+set(CLIENT_SRCS
+    service/client_example.cc
+    service/tcp_client.cc
+    service/protocol.cc
+    service/base64_utils.cc
+)
+add_executable(${CLIENT_NAME} ${CLIENT_SRCS})
+target_include_directories(${CLIENT_NAME} PRIVATE ${THIRD_PARTY_PATH})
+target_link_libraries(${CLIENT_NAME} ws2_32)
