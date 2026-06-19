@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_cord.a CMakeFiles/absl_cord.dir/cord.cc.obj CMakeFiles/absl_cord.dir/cord_analysis.cc.obj CMakeFiles/absl_cord.dir/cord_buffer.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_cord.a

@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_debugging_internal.a CMakeFiles/absl_debugging_internal.dir/internal/address_is_readable.cc.obj CMakeFiles/absl_debugging_internal.dir/internal/elf_mem_image.cc.obj CMakeFiles/absl_debugging_internal.dir/internal/vdso_support.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_debugging_internal.a

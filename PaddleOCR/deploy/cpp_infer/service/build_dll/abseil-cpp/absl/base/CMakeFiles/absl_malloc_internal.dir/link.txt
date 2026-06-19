@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_malloc_internal.a CMakeFiles/absl_malloc_internal.dir/internal/low_level_alloc.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_malloc_internal.a

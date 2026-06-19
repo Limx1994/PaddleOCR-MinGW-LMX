@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_strerror.a CMakeFiles/absl_strerror.dir/internal/strerror.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_strerror.a

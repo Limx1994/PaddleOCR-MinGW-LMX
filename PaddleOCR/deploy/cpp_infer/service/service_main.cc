@@ -27,6 +27,8 @@ void print_usage() {
     std::cout << "  --cpu_threads <num>    CPU threads per worker (default: 8)" << std::endl;
     std::cout << "  --pool_size <num>      Number of worker processes (default: 2)" << std::endl;
     std::cout << "  --use_doc_orientation  Use document orientation (default: true)" << std::endl;
+    std::cout << "  --fast_detect <mode>   Fast detection mode: none, yolo (default: none)" << std::endl;
+    std::cout << "  --plate_model <path>   Path to plate detection ONNX model" << std::endl;
     std::cout << "  --help                 Show this help" << std::endl;
 }
 
@@ -64,6 +66,10 @@ int main(int argc, char* argv[]) {
             config.use_doc_unwarping = (std::string(argv[++i]) == "true");
         } else if (arg == "--use_textline_orientation" && i + 1 < argc) {
             config.use_textline_orientation = (std::string(argv[++i]) == "true");
+        } else if (arg == "--fast_detect" && i + 1 < argc) {
+            config.fast_detect = argv[++i];
+        } else if (arg == "--plate_model" && i + 1 < argc) {
+            config.plate_model_path = argv[++i];
         } else {
             std::cerr << "Unknown argument: " << arg << std::endl;
             print_usage();

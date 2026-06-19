@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_cordz_info.a CMakeFiles/absl_cordz_info.dir/internal/cordz_info.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_cordz_info.a

@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_statusor.a CMakeFiles/absl_statusor.dir/statusor.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_statusor.a

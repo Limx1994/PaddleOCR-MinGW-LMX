@@ -1,6 +1,7 @@
 #pragma once
 
 #include "process_pool.h"
+#include "plate_detector.h"
 #include <nlohmann/json.hpp>
 #include <opencv2/opencv.hpp>
 #include <memory>
@@ -23,6 +24,12 @@ struct ServiceConfig {
     bool use_textline_orientation = false;
     int cpu_threads = 8;
     int pool_size = 2;  // Number of worker processes
+
+    // Fast detection mode for plate recognition
+    std::string fast_detect = "none";  // "none", "yolo"
+    std::string plate_model_path;      // Path to YOLOv8-nano plate detection model
+    float plate_conf_threshold = 0.5f; // Confidence threshold for plate detection
+    float plate_nms_threshold = 0.4f;  // NMS threshold for plate detection
 };
 
 class OCRServiceCore {
@@ -58,6 +65,7 @@ private:
 private:
     ServiceConfig config_;
     std::unique_ptr<ProcessPool> pool_;
+    std::unique_ptr<PlateDetector> plate_detector_;
     bool initialized_ = false;
     std::mutex mutex_;
 };

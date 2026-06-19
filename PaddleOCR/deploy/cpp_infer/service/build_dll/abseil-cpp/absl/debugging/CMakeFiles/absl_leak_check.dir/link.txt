@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_leak_check.a CMakeFiles/absl_leak_check.dir/leak_check.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_leak_check.a

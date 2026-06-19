@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_status.a CMakeFiles/absl_status.dir/status.cc.obj CMakeFiles/absl_status.dir/status_payload_printer.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_status.a

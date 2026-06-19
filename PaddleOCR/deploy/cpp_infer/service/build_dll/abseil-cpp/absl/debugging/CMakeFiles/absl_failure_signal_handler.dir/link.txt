@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_failure_signal_handler.a CMakeFiles/absl_failure_signal_handler.dir/failure_signal_handler.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_failure_signal_handler.a

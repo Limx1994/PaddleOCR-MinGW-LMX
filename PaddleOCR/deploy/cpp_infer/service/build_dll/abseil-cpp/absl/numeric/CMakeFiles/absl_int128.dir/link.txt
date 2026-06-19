@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_int128.a CMakeFiles/absl_int128.dir/int128.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_int128.a

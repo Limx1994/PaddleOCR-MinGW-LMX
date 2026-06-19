@@ -5,10 +5,13 @@
 ## 前置要求
 
 - **Git LFS**：大文件（.a, .dll, .exe, .pdiparams）使用 Git LFS 跟踪，克隆前必须安装：
+  
   ```batch
   git lfs install
   ```
+
 - **CMake 3.15+**：需在系统 PATH 中（工具链不含 cmake）
+
 - **Windows 10/11**
 
 ## 目录结构
@@ -31,38 +34,46 @@ PaddleOCR-MinGW-LMX/
 │   ├── build_onednn.bat    # 编译 oneDNN
 │   └── distribute_dll.bat  # 分发 DLL 到运行目录
 ├── dist/
-│   ├── ppocr/              # 静态模式运行目录（361MB exe）
+│   ├── ppocr/              # 静态模式运行目录（~390MB exe）
 │   │   ├── ppocr.exe       # CLI 工具
 │   │   ├── ppocr_service.exe # TCP 服务（进程池模式）
 │   │   ├── ppocr_worker.exe  # Worker 子进程
 │   │   ├── ppocr_client.exe  # 测试客户端
+│   │   ├── onnxruntime.dll   # ONNX Runtime（快速检测模式需要）
 │   │   └── models/
 │   │       ├── PP-OCRv4_mobile_det_infer/   # 文本检测模型
 │   │       ├── PP-OCRv4_mobile_rec_infer/   # 文本识别模型
-│   │       └── PP-LCNet_x1_0_doc_ori_infer/ # 文档方向分类模型（4方向）
+│   │       ├── PP-LCNet_x1_0_doc_ori_infer/ # 文档方向分类模型（4方向）
+│   │       └── plate_rtdetr.onnx            # 车牌检测模型（RT-DETR, 可选）
 │   └── ppocr_dll/          # DLL 模式运行目录（5.6MB exe + DLL）
+│       ├── libpaddle_inference.dll  # Paddle 推理库
+│       ├── libphi_core.dll          # Paddle Phi 核心库
+│       ├── libpir.dll               # Paddle IR 库
+│       ├── libcommon.dll            # Paddle 基础库
+│       ├── onnxruntime.dll          # ONNX Runtime（快速检测模式需要）
 │       └── models/
 │           ├── PP-OCRv4_mobile_det_infer/   # 文本检测模型
 │           ├── PP-OCRv4_mobile_rec_infer/   # 文本识别模型
-│           └── PP-LCNet_x1_0_doc_ori_infer/ # 文档方向分类模型（4方向）
+│           ├── PP-LCNet_x1_0_doc_ori_infer/ # 文档方向分类模型（4方向）
+│           └── plate_rtdetr.onnx            # 车牌检测模型（RT-DETR, 可选）
 └── test_images/            # 测试数据
 ```
 
 ### 两种构建模式
 
-| 模式 | ppocr.exe 大小 | 运行时依赖 | 适用场景 |
-|------|---------------|-----------|---------|
-| 静态模式 | 361MB | MinGW 运行时 DLL | 简单部署，单文件，含服务模式 |
-| DLL 模式 | 5.6MB | Paddle 4 DLL + OpenCV + MinGW | 小体积，多项目共享 |
+| 模式     | ppocr.exe 大小 | 运行时依赖                                        | 适用场景       |
+| ------ | ------------ | -------------------------------------------- | ---------- |
+| 静态模式   | ~390MB       | MinGW 运行时 DLL + OpenCV + ONNX Runtime        | 简单部署，含服务模式 |
+| DLL 模式 | 5.6MB        | Paddle 4 DLL + OpenCV + MinGW + ONNX Runtime | 小体积，多项目共享  |
 
 ### 构建产物
 
-| 可执行文件 | 说明 |
-|-----------|------|
-| ppocr.exe | CLI 工具，单次 OCR 识别 |
-| ppocr_service.exe | TCP 服务，支持多次请求（进程池架构） |
-| ppocr_worker.exe | Worker 子进程，由 ppocr_service 管理 |
-| ppocr_client.exe | 测试客户端 |
+| 可执行文件             | 说明                            |
+| ----------------- | ----------------------------- |
+| ppocr.exe         | CLI 工具，单次 OCR 识别              |
+| ppocr_service.exe | TCP 服务，支持多次请求（进程池架构）          |
+| ppocr_worker.exe  | Worker 子进程，由 ppocr_service 管理 |
+| ppocr_client.exe  | 测试客户端                         |
 
 ## 快速开始
 
@@ -111,14 +122,20 @@ ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
 cd D:\tmp\tmp\dist\ppocr_dll
 ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
 
+# 快速检测模式（车牌场景）
+ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2 --fast_detect yolo --plate_model ./models/plate_rtdetr.onnx
+
 # 发送请求
 ppocr_client.exe test.jpg 127.0.0.1 8081
 ```
 
 **架构：**
+
 ```
 ppocr_service.exe（主进程）
 ├── TCP Server
+├── PlateDetector（快速检测模式，可选）
+│   └── RT-DETR ONNX 模型
 ├── Process Pool（管理 N 个 worker 进程）
 │   ├── ppocr_worker.exe（独立进程）
 │   └── ppocr_worker.exe（独立进程）
@@ -126,10 +143,44 @@ ppocr_service.exe（主进程）
 ```
 
 **核心特性：**
+
 - 进程隔离 - Paddle 运行时状态互不影响
 - 支持多次请求，不会崩溃
 - Worker 崩溃自动重启
 - 每次请求约 200ms
+- 快速检测模式：~10ms 车牌检测 + ~0.1ms 识别
+
+### 快速检测模式（车牌场景）
+
+针对车牌识别场景，提供 RT-DETR 快速检测模式，先裁剪车牌区域再进行 OCR 识别，大幅提升性能。
+
+**工作原理：**
+
+```
+原图 → RT-DETR 检测车牌 (~10ms) → 裁剪车牌区域 → OCR 识别 (~0.1ms)
+```
+
+**使用方法：**
+
+```batch
+cd D:\tmp\tmp\dist\ppocr
+
+# 下载 RT-DETR 车牌检测模型
+# https://huggingface.co/Topurrra/rtdetr-license-plate-detection-onnx
+
+# 启动服务（快速检测模式）
+ppocr_service.exe --model_dir ./models --fast_detect yolo --plate_model ./models/plate_rtdetr.onnx --port 8080
+
+# 发送请求
+ppocr_client.exe test.jpg 127.0.0.1 8080
+```
+
+**性能对比：**
+
+| 方案           | 检测耗时   | 识别耗时   | 总耗时   |
+| ------------ | ------ | ------ | ----- |
+| 完整 OCR 流程    | ~500ms | ~1.5s  | ~2s   |
+| RT-DETR 快速检测 | ~10ms  | ~0.1ms | ~10ms |
 
 ## 从源码编译
 
@@ -197,20 +248,22 @@ build_mingw.bat --dll
 
 编译产物：`build_mingw_dll\ppocr.exe`（5.6MB）
 
-DLL 模式运行时需要以下 DLL（共 10 个）：
+DLL 模式运行时需要以下 DLL（共 14 个）：
 
-| DLL | 大小 | 说明 |
-|-----|------|------|
-| `libcommon.dll` | ~413K | Paddle 基础库 |
-| `libpir.dll` | ~2.7M | Paddle IR |
-| `libphi_core.dll` | ~194M | Paddle Phi |
-| `libpaddle_inference.dll` | ~348M | Paddle 推理 |
-| `libopencv_world470.dll` | ~53M | OpenCV |
-| `libpolyclipping.dll` | ~2M | Clipper 库 |
-| `libgcc_s_seh-1.dll` | ~74K | MinGW 运行时 |
-| `libstdc++-6.dll` | ~1.9M | MinGW 运行时 |
-| `libwinpthread-1.dll` | ~52K | MinGW 运行时 |
-| `libgomp-1.dll` | ~237K | OpenMP 运行时 |
+| DLL                                | 大小     | 说明                     |
+| ---------------------------------- | ------ | ---------------------- |
+| `libcommon.dll`                    | ~413K  | Paddle 基础库             |
+| `libpir.dll`                       | ~2.7M  | Paddle IR              |
+| `libphi_core.dll`                  | ~194M  | Paddle Phi             |
+| `libpaddle_inference.dll`          | ~348M  | Paddle 推理              |
+| `libopencv_world470.dll`           | ~53M   | OpenCV                 |
+| `libpolyclipping.dll`              | ~2M    | Clipper 库              |
+| `onnxruntime.dll`                  | ~10.9M | ONNX Runtime（快速检测模式需要） |
+| `onnxruntime_providers_shared.dll` | ~22K   | ONNX Runtime           |
+| `libgcc_s_seh-1.dll`               | ~74K   | MinGW 运行时              |
+| `libstdc++-6.dll`                  | ~1.9M  | MinGW 运行时              |
+| `libwinpthread-1.dll`              | ~52K   | MinGW 运行时              |
+| `libgomp-1.dll`                    | ~237K  | OpenMP 运行时             |
 
 ### 编译 OpenCV
 
@@ -255,10 +308,10 @@ build_mingw.bat
 | `--use_textline_orientation`     | 是否使用文本行方向分类  | true                |
 | `--device`                       | 推理设备         | cpu                 |
 | `--precision`                    | 计算精度         | fp32                |
-| `--text_det_limit_side_len`      | 检测图像边长限制    | 64                  |
+| `--text_det_limit_side_len`      | 检测图像边长限制     | 64                  |
 | `--text_det_thresh`              | 检测像素阈值       | 0.3                 |
 | `--text_det_box_thresh`          | 检测框阈值        | 0.6                 |
-| `--text_det_unclip_ratio`        | 文本区域扩展系数    | 1.5                 |
+| `--text_det_unclip_ratio`        | 文本区域扩展系数     | 1.5                 |
 | `--text_rec_score_thresh`        | 识别分数阈值       | 0                   |
 | `--mkldnn_cache_capacity`        | MKLDNN 缓存容量  | 10                  |
 
@@ -277,6 +330,7 @@ build_mingw.bat
 | PP-OCRv4_mobile_rec | 文字识别 | 11MB  |
 
 **模型文件格式**：PaddlePaddle 3.0 支持两种格式：
+
 - `.json` + `.pdiparams`（新格式，推荐）
 - `.pdmodel` + `.pdiparams`（旧格式，兼容）
 
@@ -311,9 +365,11 @@ build_mingw.bat
 - **推理框架**：PaddlePaddle Inference
 - **加速库**：oneDNN (MKLDNN) v3.6.2（可选）
 - **图像处理**：OpenCV 4.7.0
+- **深度学习推理**：ONNX Runtime 1.17.0（快速检测模式）
 - **编译器**：MinGW GCC 11.2+
 - **构建系统**：CMake + Ninja
 - **OCR 模型**：PP-OCRv4
+- **车牌检测模型**：RT-DETR（可选）
 
 ## 许可证
 

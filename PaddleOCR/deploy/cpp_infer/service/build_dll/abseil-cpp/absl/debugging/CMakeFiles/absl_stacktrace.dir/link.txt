@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_stacktrace.a CMakeFiles/absl_stacktrace.dir/stacktrace.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_stacktrace.a

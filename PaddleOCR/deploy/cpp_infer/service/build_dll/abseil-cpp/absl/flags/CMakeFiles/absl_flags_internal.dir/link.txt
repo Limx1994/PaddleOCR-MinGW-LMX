@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_flags_internal.a CMakeFiles/absl_flags_internal.dir/internal/flag.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_flags_internal.a

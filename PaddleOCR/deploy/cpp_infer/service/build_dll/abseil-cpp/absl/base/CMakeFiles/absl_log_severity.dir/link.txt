@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_log_severity.a CMakeFiles/absl_log_severity.dir/log_severity.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_log_severity.a

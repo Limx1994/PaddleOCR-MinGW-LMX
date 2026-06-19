@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_demangle_internal.a CMakeFiles/absl_demangle_internal.dir/internal/demangle.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_demangle_internal.a

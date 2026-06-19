@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_synchronization.a CMakeFiles/absl_synchronization.dir/barrier.cc.obj CMakeFiles/absl_synchronization.dir/blocking_counter.cc.obj CMakeFiles/absl_synchronization.dir/internal/create_thread_identity.cc.obj CMakeFiles/absl_synchronization.dir/internal/per_thread_sem.cc.obj CMakeFiles/absl_synchronization.dir/internal/waiter.cc.obj CMakeFiles/absl_synchronization.dir/notification.cc.obj CMakeFiles/absl_synchronization.dir/mutex.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_synchronization.a

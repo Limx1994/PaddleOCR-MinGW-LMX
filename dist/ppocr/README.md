@@ -5,7 +5,7 @@
 ## 目录结构
 
 ```
-D:\tmp\tmp\dist\ppocr\          # 静态模式 (361MB exe)
+D:\tmp\tmp\dist\ppocr\          # 静态模式 (~390MB exe)
 ├── ppocr.exe                    # CLI 工具
 ├── ppocr_service.exe            # TCP 服务（进程池模式）
 ├── ppocr_worker.exe             # Worker 子进程
@@ -13,24 +13,30 @@ D:\tmp\tmp\dist\ppocr\          # 静态模式 (361MB exe)
 ├── models/                      # 推理模型目录
 │   ├── PP-OCRv4_mobile_det_infer/       # 文本检测模型 (mobile)
 │   ├── PP-OCRv4_mobile_rec_infer/       # 文本识别模型 (mobile)
-│   └── PP-LCNet_x1_0_doc_ori_infer/     # 文档方向分类模型 (4方向: 0°/90°/180°/270°)
+│   ├── PP-LCNet_x1_0_doc_ori_infer/     # 文档方向分类模型 (4方向: 0°/90°/180°/270°)
+│   └── plate_rtdetr.onnx                # 车牌检测模型 (RT-DETR, 可选)
 ├── output/                      # 输出目录
-├── libopencv_world470.dll       # OpenCV 库
-└── MinGW 运行时 DLL             # libgcc_s_seh-1.dll, libstdc++-6.dll 等
+├── libopencv_world470.dll       # OpenCV 库 (56MB)
+├── libpolyclipping.dll          # Clipper 库 (2.2MB)
+├── onnxruntime.dll              # ONNX Runtime (10.9MB, 快速检测模式需要)
+├── onnxruntime_providers_shared.dll
+└── MinGW 运行时 DLL             # libgcc_s_seh-1.dll, libstdc++-6.dll, libwinpthread-1.dll, libgomp-1.dll
 
-D:\tmp\tmp\dist\ppocr_dll\     # DLL 模式 (5.4MB exe)
+D:\tmp\tmp\dist\ppocr_dll\     # DLL 模式 (~5.4MB exe)
 ├── ppocr.exe                    # CLI 工具
 ├── ppocr_service.exe            # TCP 服务（进程池模式）
 ├── ppocr_worker.exe             # Worker 子进程
 ├── ppocr_client.exe             # 测试客户端
 ├── models/                      # 推理模型目录
-├── libpaddle_inference.dll      # Paddle 推理库
-├── libphi_core.dll              # Paddle Phi 核心库
-├── libpir.dll                   # Paddle IR 库
-├── libcommon.dll                # Paddle 基础库
-├── libopencv_world470.dll       # OpenCV 库
-├── libpolyclipping.dll          # Clipper 库
-└── MinGW 运行时 DLL             # libgcc_s_seh-1.dll, libstdc++-6.dll 等
+├── libpaddle_inference.dll      # Paddle 推理库 (364MB)
+├── libphi_core.dll              # Paddle Phi 核心库 (203MB)
+├── libpir.dll                   # Paddle IR 库 (2.8MB)
+├── libcommon.dll                # Paddle 基础库 (423KB)
+├── libopencv_world470.dll       # OpenCV 库 (56MB)
+├── libpolyclipping.dll          # Clipper 库 (2.2MB)
+├── onnxruntime.dll              # ONNX Runtime (10.9MB, 快速检测模式需要)
+├── onnxruntime_providers_shared.dll
+└── MinGW 运行时 DLL             # libgcc_s_seh-1.dll, libstdc++-6.dll, libwinpthread-1.dll, libgomp-1.dll
 ```
 
 ## 快速开始
@@ -361,6 +367,9 @@ ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
 # DLL 模式
 cd D:\tmp\tmp\dist\ppocr_dll
 ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
+
+# 快速检测模式（车牌场景）
+ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2 --fast_detect yolo --plate_model ./models/plate_rtdetr.onnx
 ```
 
 ### 发送请求
@@ -379,6 +388,45 @@ ppocr_client.exe <图片路径> 127.0.0.1 8081
 | `--pool_size`           | 2         | Worker 进程数          |
 | `--cpu_threads`         | 8         | 每个 worker 的 CPU 线程数 |
 | `--use_doc_orientation` | true      | 使用文档方向分类            |
+| `--fast_detect`         | none      | 快速检测模式：none, yolo   |
+| `--plate_model`         | 空         | 车牌检测 ONNX 模型路径     |
+
+## 快速检测模式（车牌场景）
+
+针对车牌识别场景，提供 RT-DETR 快速检测模式，先裁剪车牌区域再进行 OCR 识别，大幅提升性能。
+
+### 工作原理
+
+```
+原图 → RT-DETR 检测车牌 (~10ms) → 裁剪车牌区域 → OCR 识别 (~0.1ms)
+```
+
+### 使用方法
+
+```batch
+cd D:\tmp\tmp\dist\ppocr
+
+# 启动服务（快速检测模式）
+ppocr_service.exe --model_dir ./models --fast_detect yolo --plate_model ./models/plate_rtdetr.onnx --port 8080
+
+# 发送请求
+ppocr_client.exe test.jpg 127.0.0.1 8080
+```
+
+### 性能对比
+
+| 方案 | 检测耗时 | 识别耗时 | 总耗时 |
+|------|---------|---------|--------|
+| 完整 OCR 流程 | ~500ms | ~1.5s | ~2s |
+| RT-DETR 快速检测 | ~10ms | ~0.1ms | ~10ms |
+
+### 模型要求
+
+需要准备 RT-DETR 车牌检测 ONNX 模型（`plate_rtdetr.onnx`），可从以下来源获取：
+- [Hugging Face - RT-DETR License Plate Detection](https://huggingface.co/Topurrra/rtdetr-license-plate-detection-onnx)
+
+模型输入：640x640 RGB 图像
+模型输出：logits [1, 300, 1] + pred_boxes [1, 300, 4]
 
 ## 编译说明
 

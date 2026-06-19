@@ -8,6 +8,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(WITH_STATIC_LIB "Use static library" ON)
 option(WITH_DLL_LIB "Use DLL library" OFF)
 
+# Set output directory based on build mode
+if(WITH_DLL_LIB)
+    set(DIST_OUTPUT_DIR "D:/tmp/tmp/dist/ppocr_dll")
+else()
+    set(DIST_OUTPUT_DIR "D:/tmp/tmp/dist/ppocr")
+endif()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DIST_OUTPUT_DIR})
+message(STATUS "Output directory: ${DIST_OUTPUT_DIR}")
+
 # Set paths
 SET(PADDLE_LIB "" CACHE PATH "Location of Paddle library")
 SET(OPENCV_DIR "" CACHE PATH "Location of OpenCV library")
@@ -38,6 +47,9 @@ set(OpenCV_DIR "${OPENCV_DIR}/x64/mingw/lib")
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+# Abseil - use pre-built static libraries
+# Note: We need to use --whole-archive to ensure all symbols are included
+
 # Link directories
 link_directories("${PADDLE_LIB}/paddle/lib")
 link_directories("${PADDLE_LIB}/third_party/install/openblas/lib")
@@ -49,9 +61,12 @@ link_directories("${PADDLE_LIB}/third_party/install/zlib/lib")
 link_directories("${PADDLE_LIB}/third_party/install/xxhash/lib")
 link_directories("${PADDLE_LIB}/third_party/install/yaml-cpp/lib")
 
-# Paddle libraries
+# Paddle libraries - use same order as main CMakeLists.txt
+# libphi_core.a must be linked with --whole-archive
 set(PADDLE_LIBS
+    -Wl,--whole-archive
     ${PADDLE_LIB}/paddle/lib/libphi_core.a
+    -Wl,--no-whole-archive
     ${PADDLE_LIB}/paddle/lib/libpaddle_inference.a
     ${PADDLE_LIB}/paddle/lib/libcommon.a
 )
@@ -68,17 +83,24 @@ set(THIRD_PARTY_LIBS
     ${PADDLE_LIB}/third_party/install/yaml-cpp/lib/libyaml-cpp.a
 )
 
-# Abseil libraries - use static libraries from build_mingw
-# Note: abseil static libs need --whole-archive
-# Using GLOB to get all .a files, then wrapping with --whole-archive
-file(GLOB_RECURSE _ABSL_LIBS "${CMAKE_CURRENT_SOURCE_DIR}/../build_mingw/third_party/abseil-cpp/absl/*.a")
-set(ABSL_LIBS -Wl,--whole-archive ${_ABSL_LIBS} -Wl,--no-whole-archive)
-# Add -allow-multiple-definition to handle symbol conflicts
-# Also add --gc-sections to remove unused sections
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--allow-multiple-definition -Wl,--gc-sections")
+# Abseil libraries - built from source via add_subdirectory
+# The absl::statusor target will be available after add_subdirectory
 
 # Clipper library
 set(CLIPPER_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../build_mingw/third_party/clipper_ver6.4.2/cpp/libpolyclipping.dll.a")
+
+# ONNX Runtime
+set(ONNXRUNTIME_DIR "D:/tmp/tmp/third_party/onnxruntime")
+include_directories(${ONNXRUNTIME_DIR}/include)
+link_directories(${ONNXRUNTIME_DIR}/lib)
+
+# Build abseil from source
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../third_party/abseil-cpp" "${CMAKE_CURRENT_BINARY_DIR}/abseil-cpp")
+
+# yaml-cpp library (static)
+set(YAMLCPP_LIB "${PADDLE_LIB}/third_party/install/yaml-cpp/lib/libyaml-cpp.a")
+# Define YAML_CPP_STATIC_DEFINE to use static library mode
+add_definitions(-DYAML_CPP_STATIC_DEFINE)
 
 # Source files
 set(SERVICE_SRCS
@@ -87,6 +109,9 @@ set(SERVICE_SRCS
     tcp_server.cc
     protocol.cc
     base64_utils.cc
+    plate_detector.cc
+    process_pool.cc
+    worker_process.cc
 )
 
 set(CLIENT_SRCS
@@ -99,9 +124,8 @@ set(CLIENT_SRCS
 # OCR source files
 file(GLOB OCR_SRCS
     "${CMAKE_CURRENT_SOURCE_DIR}/../src/api/pipelines/*.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../src/api/pipelines/ocr/*.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../src/api/pipelines/doc_preprocessor/*.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/../src/api/models/*.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../src/pipelines/**/*.cc"
 )
 
 file(GLOB COMMON_SRCS
@@ -131,13 +155,13 @@ add_executable(ppocr_service
 )
 
 target_link_libraries(ppocr_service
-    -Wl,--whole-archive
     ${PADDLE_LIBS}
-    -Wl,--no-whole-archive
     ${THIRD_PARTY_LIBS}
     ${OpenCV_LIBS}
-    ${ABSL_LIBS}
+    absl::statusor
     ${CLIPPER_LIB}
+    ${YAMLCPP_LIB}
+    onnxruntime
     -lgomp
     -lpthread
     -lshlwapi

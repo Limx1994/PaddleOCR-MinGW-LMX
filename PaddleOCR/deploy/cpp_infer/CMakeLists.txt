@@ -3,7 +3,7 @@ project(ppocr CXX)
 
 set(DEMO_NAME "ppocr")
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Output directory will be set after WITH_DLL_LIB option is defined
@@ -336,6 +336,14 @@ if(MINGW)
         ${PADDLE_LIB}/third_party/install/xxhash/lib/libxxhash.a
         shlwapi ws2_32 dbghelp
         )
+    # ONNX Runtime for plate detection
+    set(ONNXRUNTIME_DIR "D:/tmp/tmp/third_party/onnxruntime")
+    if(EXISTS "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dll.a")
+        include_directories(${ONNXRUNTIME_DIR}/include)
+        link_directories(${ONNXRUNTIME_DIR}/lib)
+        set(DEPS ${DEPS} onnxruntime)
+        message(STATUS "ONNX Runtime found: ${ONNXRUNTIME_DIR}")
+    endif()
     if(EXISTS "${PADDLE_LIB}/third_party/install/yaml-cpp/lib/libyaml-cpp.a")
         set(DEPS ${DEPS} ${PADDLE_LIB}/third_party/install/yaml-cpp/lib/libyaml-cpp.a)
     endif()
@@ -469,6 +477,7 @@ set(SERVICE_SRCS
     service/base64_utils.cc
     service/process_pool.cc
     service/worker_process.cc
+    service/plate_detector.cc
 )
 add_executable(${SERVICE_NAME} ${SERVICE_SRCS} ${SRC_LIST})
 target_include_directories(${SERVICE_NAME} PRIVATE ${THIRD_PARTY_PATH})

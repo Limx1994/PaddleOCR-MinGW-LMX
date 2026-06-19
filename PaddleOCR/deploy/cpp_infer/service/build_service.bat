@@ -4,9 +4,9 @@ setlocal
 :: Get project root directory
 set SCRIPT_DIR=%~dp0
 set ROOT_DIR=%SCRIPT_DIR%..\..\..
-set MINGW_DIR=%ROOT_DIR%\toolchain\mingw
-set PADDLE_LIB=%ROOT_DIR%\libs\paddle_inference_gcc
-set OPENCV_DIR=%ROOT_DIR%\libs\opencv_install_gcc
+set MINGW_DIR=D:\tmp\tmp\toolchain\mingw
+set PADDLE_LIB=D:\tmp\tmp\libs\paddle_inference_gcc
+set OPENCV_DIR=D:\tmp\tmp\libs\opencv_install_gcc
 
 :: Check if DLL mode
 set USE_DLL=OFF
@@ -107,4 +107,7 @@ echo.
 echo Usage:
 echo   ppocr_service.exe --model_dir ..\..\..\dist\ppocr\models --port 8080
 echo   ppocr_client.exe ..\..\..\dist\ppocr\test.jpg
+echo.
+echo Fast Detection Mode (Plate):
+echo   ppocr_service.exe --model_dir ..\..\..\dist\ppocr\models --fast_detect=yolo --plate_model ..\..\..\models\plate_det.onnx
 echo ========================================

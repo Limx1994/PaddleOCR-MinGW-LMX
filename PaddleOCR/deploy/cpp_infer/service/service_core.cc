@@ -36,6 +36,25 @@ bool OCRServiceCore::Init(const ServiceConfig& config) {
     INFO("Port: %d", config_.port);
     INFO("Model dir: %s", config_.model_dir.c_str());
     INFO("Pool size: %d", config_.pool_size);
+    INFO("Fast detect: %s", config_.fast_detect.c_str());
+
+    // Initialize plate detector if fast detection is enabled
+    if (config_.fast_detect == "yolo") {
+        if (config_.plate_model_path.empty()) {
+            INFOE("Plate model path is required for yolo fast detection");
+            return false;
+        }
+
+        plate_detector_ = std::unique_ptr<PlateDetector>(new PlateDetector());
+        if (!plate_detector_->Init(config_.plate_model_path,
+                                   config_.plate_conf_threshold,
+                                   config_.plate_nms_threshold)) {
+            INFOE("Failed to initialize plate detector");
+            plate_detector_.reset();
+            return false;
+        }
+        INFO("Plate detector initialized successfully");
+    }
 
     // Create and initialize process pool
     pool_ = std::unique_ptr<ProcessPool>(new ProcessPool());
@@ -68,6 +87,24 @@ json OCRServiceCore::ProcessOCR(const std::string& image_data,
         cv::Mat image = DecodeImage(image_data);
         if (image.empty()) {
             return {{"code", -1}, {"message", "Failed to decode image"}};
+        }
+
+        // Fast detection mode - crop plate region before OCR
+        if (plate_detector_ && plate_detector_->IsInitialized()) {
+            auto start = std::chrono::high_resolution_clock::now();
+
+            cv::Mat plate = plate_detector_->CropPlate(image);
+
+            auto end = std::chrono::high_resolution_clock::now();
+            double detect_ms = std::chrono::duration<double, std::milli>(
+                end - start).count();
+
+            if (!plate.empty()) {
+                INFO("Plate detected in %.2f ms, using cropped region", detect_ms);
+                image = plate;
+            } else {
+                INFO("No plate detected, using original image");
+            }
         }
 
         // Save temp file
@@ -103,6 +140,8 @@ json OCRServiceCore::GetStatus() {
         {"initialized", initialized_},
         {"mode", "process_pool"},
         {"pool", pool_status},
+        {"fast_detect", config_.fast_detect},
+        {"plate_detector", plate_detector_ ? plate_detector_->IsInitialized() : false},
         {"config", {
             {"host", config_.host},
             {"port", config_.port},
@@ -110,7 +149,9 @@ json OCRServiceCore::GetStatus() {
             {"pool_size", config_.pool_size},
             {"use_doc_orientation", config_.use_doc_orientation},
             {"use_doc_unwarping", config_.use_doc_unwarping},
-            {"use_textline_orientation", config_.use_textline_orientation}
+            {"use_textline_orientation", config_.use_textline_orientation},
+            {"fast_detect", config_.fast_detect},
+            {"plate_model_path", config_.plate_model_path}
         }}
     };
 }

@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_flags_config.a CMakeFiles/absl_flags_config.dir/usage_config.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_flags_config.a

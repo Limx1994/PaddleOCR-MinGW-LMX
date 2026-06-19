@@ -92,6 +92,8 @@ ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
 | `--use_doc_orientation` | true | 使用文档方向分类 |
 | `--use_doc_unwarping` | false | 使用文档去畸变 |
 | `--use_textline_orientation` | false | 使用文本行方向分类 |
+| `--fast_detect` | none | 快速检测模式：none, yolo |
+| `--plate_model` | 空 | 车牌检测 ONNX 模型路径 |
 
 ## 通讯协议
 
@@ -199,6 +201,40 @@ client.disconnect()
 |------|------|--------|----------|
 | 命令行 | ~3.6s/次 | 低 | 每次释放 |
 | 服务模式（进程池） | ~200ms/次 | 高 | 每个 worker ~500MB |
+| 快速检测模式（YOLO） | ~50ms/次 | 更高 | 每个 worker ~500MB |
+
+## 快速检测模式（车牌场景）
+
+针对车牌识别场景，提供 YOLOv8-nano 快速检测模式，先裁剪车牌区域再进行 OCR 识别，大幅提升性能。
+
+### 工作原理
+
+```
+原图 → YOLOv8-nano 检测车牌 (~10ms) → 裁剪车牌区域 → OCR 识别 (~0.1ms)
+```
+
+### 使用方法
+
+```batch
+cd D:\tmp\tmp\dist\ppocr
+ppocr_service.exe --model_dir ./models --fast_detect yolo --plate_model ./models/plate_det.onnx
+```
+
+### 性能对比
+
+| 方案 | 检测耗时 | 识别耗时 | 总耗时 |
+|------|---------|---------|--------|
+| 完整 OCR 流程 | ~500ms | ~1.5s | ~2s |
+| YOLO 快速检测 | ~10ms | ~0.1ms | ~10ms |
+
+### 模型要求
+
+需要准备 YOLOv8-nano 车牌检测 ONNX 模型，可从以下来源获取：
+- 自行训练的 YOLOv8-nano 模型
+- 开源车牌检测模型（如 CCPD 数据集训练）
+
+模型输入：640x640 RGB 图像
+模型输出：[1, 4+num_classes, num_detections] 格式的检测结果
 
 ## 优势
 

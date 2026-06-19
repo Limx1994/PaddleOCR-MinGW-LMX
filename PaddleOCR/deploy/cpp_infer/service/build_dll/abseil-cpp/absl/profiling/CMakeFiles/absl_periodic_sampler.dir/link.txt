@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_periodic_sampler.a CMakeFiles/absl_periodic_sampler.dir/internal/periodic_sampler.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_periodic_sampler.a

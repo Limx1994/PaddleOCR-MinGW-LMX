@@ -1,0 +1,2 @@
+D:\tmp\tmp\toolchain\mingw\bin\ar.exe qc libabsl_strings_internal.a CMakeFiles/absl_strings_internal.dir/internal/ostringstream.cc.obj CMakeFiles/absl_strings_internal.dir/internal/utf8.cc.obj CMakeFiles/absl_strings_internal.dir/internal/escaping.cc.obj
+D:\tmp\tmp\toolchain\mingw\bin\ranlib.exe libabsl_strings_internal.a
