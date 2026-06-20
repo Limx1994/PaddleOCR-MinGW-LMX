@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 #include <sstream>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -66,8 +67,10 @@ json ProcessPool::ProcessOCR(const std::string& image_path) {
     // Find available worker
     int worker_idx = FindAvailableWorker();
     if (worker_idx < 0) {
-        // No available worker, wait and retry
-        INFO("No available worker, waiting...");
+        // No available worker, trigger async restart and wait
+        INFO("No available worker, triggering async restart...");
+        AsyncRestartDeadWorkers();
+
         for (int retry = 0; retry < 50; retry++) {  // Wait up to 5 seconds
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             worker_idx = FindAvailableWorker();
@@ -83,19 +86,23 @@ json ProcessPool::ProcessOCR(const std::string& image_path) {
     for (int retry = 0; retry <= config_.max_retries; retry++) {
         if (retry > 0) {
             INFO("Retrying request, attempt %d", retry);
+            // Find a new worker for retry
+            worker_idx = FindAvailableWorker();
+            if (worker_idx < 0) {
+                AsyncRestartDeadWorkers();
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                worker_idx = FindAvailableWorker();
+                if (worker_idx < 0) continue;
+            }
         }
 
         std::string response;
         bool ok = workers_[worker_idx]->ProcessRequest(image_path, response);
 
         if (!ok) {
-            // Worker failed, try to restart
-            INFO("Worker %d failed, restarting...", worker_idx);
-            if (!RestartWorker(worker_idx)) {
-                INFOE("Failed to restart worker %d", worker_idx);
-                continue;
-            }
-            worker_idx = static_cast<int>(workers_.size()) - 1;
+            // Worker failed, trigger async restart
+            INFO("Worker %d failed, triggering async restart", worker_idx);
+            AsyncRestartDeadWorkers();
             continue;
         }
 
@@ -132,10 +139,9 @@ json ProcessPool::ProcessOCR(const std::string& image_path) {
             std::string error = response.substr(4);
             INFOE("Worker %d error: %s", worker_idx, error.c_str());
 
-            // Check if worker is still alive
+            // Check if worker is still alive, trigger async restart if dead
             if (!workers_[worker_idx]->IsAlive()) {
-                RestartWorker(worker_idx);
-                worker_idx = static_cast<int>(workers_.size()) - 1;
+                AsyncRestartDeadWorkers();
             }
             continue;
         } else {
@@ -222,6 +228,7 @@ void ProcessPool::Shutdown() {
 int ProcessPool::FindAvailableWorker() {
     std::lock_guard<std::mutex> lock(mutex_);
 
+    // Only find IDLE workers, do NOT restart here
     for (size_t i = 0; i < workers_.size(); i++) {
         if (workers_[i]->IsAlive() &&
             workers_[i]->GetStatus() == WorkerStatus::IDLE) {
@@ -229,18 +236,41 @@ int ProcessPool::FindAvailableWorker() {
         }
     }
 
-    // Check if any dead workers can be restarted
-    for (size_t i = 0; i < workers_.size(); i++) {
-        if (!workers_[i]->IsAlive() ||
-            workers_[i]->GetStatus() == WorkerStatus::DEAD) {
-            INFO("Worker %zu is dead, restarting...", i);
-            if (RestartWorker(static_cast<int>(i))) {
-                return static_cast<int>(i);
+    return -1;
+}
+
+void ProcessPool::AsyncRestartDeadWorkers() {
+    // Collect dead worker indices under lock
+    std::vector<size_t> dead_indices;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        for (size_t i = 0; i < workers_.size(); i++) {
+            if (!workers_[i]->IsAlive() ||
+                workers_[i]->GetStatus() == WorkerStatus::DEAD) {
+                dead_indices.push_back(i);
             }
         }
     }
 
-    return -1;
+    // Restart dead workers outside the lock (in a detached thread)
+    if (!dead_indices.empty()) {
+        std::thread([this, dead_indices]() {
+            for (size_t idx : dead_indices) {
+                INFO("Async restarting worker %zu", idx);
+                // RestartWorker is called without pool mutex
+                // Worker has its own internal mutex
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    if (idx < workers_.size()) {
+                        workers_[idx]->Restart();
+                        worker_restarts_++;
+                        INFO("Worker %zu restarted, PID: %d",
+                             idx, workers_[idx]->GetPid());
+                    }
+                }
+            }
+        }).detach();
+    }
 }
 
 bool ProcessPool::RestartWorker(int index) {

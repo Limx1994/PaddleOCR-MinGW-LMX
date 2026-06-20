@@ -4,6 +4,7 @@
 #include <sstream>
 #include <chrono>
 #include <thread>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -187,15 +188,57 @@ bool WorkerProcess::Start(const std::string& worker_exe,
         close(stdin_pipe[0]);
         close(stdout_pipe[1]);
 
-        // Build args
-        std::string doc_ori_str = use_doc_orientation ? "true" : "false";
-        execl(worker_exe.c_str(), worker_exe.c_str(),
-              "--model_dir", model_dir.c_str(),
-              "--cpu_threads", std::to_string(cpu_threads).c_str(),
-              "--use_doc_orientation", doc_ori_str.c_str(),
-              NULL);
+        // Build args (same as Windows path)
+        std::vector<std::string> arg_strs;
+        arg_strs.push_back(worker_exe);
 
-        // If execl fails
+        if (!det_model_dir.empty()) {
+            arg_strs.push_back("--det_model_dir");
+            arg_strs.push_back(det_model_dir);
+            if (!det_model_name.empty()) {
+                arg_strs.push_back("--det_model_name");
+                arg_strs.push_back(det_model_name);
+            }
+        }
+        if (!rec_model_dir.empty()) {
+            arg_strs.push_back("--rec_model_dir");
+            arg_strs.push_back(rec_model_dir);
+            if (!rec_model_name.empty()) {
+                arg_strs.push_back("--rec_model_name");
+                arg_strs.push_back(rec_model_name);
+            }
+        }
+        if (!cls_model_dir.empty()) {
+            arg_strs.push_back("--cls_model_dir");
+            arg_strs.push_back(cls_model_dir);
+            if (!cls_model_name.empty()) {
+                arg_strs.push_back("--cls_model_name");
+                arg_strs.push_back(cls_model_name);
+            }
+        }
+        if (!model_dir.empty()) {
+            arg_strs.push_back("--model_dir");
+            arg_strs.push_back(model_dir);
+        }
+        arg_strs.push_back("--cpu_threads");
+        arg_strs.push_back(std::to_string(cpu_threads));
+        arg_strs.push_back("--use_doc_orientation");
+        arg_strs.push_back(use_doc_orientation ? "true" : "false");
+        arg_strs.push_back("--use_doc_unwarping");
+        arg_strs.push_back(use_doc_unwarping ? "true" : "false");
+        arg_strs.push_back("--use_textline_orientation");
+        arg_strs.push_back(use_textline_orientation ? "true" : "false");
+
+        // Convert to char* array for execv
+        std::vector<char*> argv;
+        for (auto& s : arg_strs) {
+            argv.push_back(const_cast<char*>(s.c_str()));
+        }
+        argv.push_back(nullptr);
+
+        execv(worker_exe.c_str(), argv.data());
+
+        // If execv fails
         _exit(1);
     }
 
@@ -355,6 +398,10 @@ void WorkerProcess::Stop() {
 #endif
 
     status_ = WorkerStatus::DEAD;
+
+    // Reset read buffer
+    read_buf_len_ = 0;
+    read_buf_pos_ = 0;
 }
 
 bool WorkerProcess::Restart() {
@@ -367,39 +414,40 @@ bool WorkerProcess::Restart() {
 
 bool WorkerProcess::ReadLine(std::string& line) {
     line.clear();
-    char ch;
-    int bytes_read;
+
+    while (true) {
+        // If buffer has data, scan for newline
+        while (read_buf_pos_ < read_buf_len_) {
+            char ch = read_buf_[read_buf_pos_++];
+            if (ch == '\n') {
+                return true;
+            }
+            if (ch != '\r') {
+                line += ch;
+            }
+        }
+
+        // Buffer exhausted, refill
+        read_buf_pos_ = 0;
+        read_buf_len_ = 0;
 
 #ifdef _WIN32
-    DWORD bytes;
-    while (true) {
-        BOOL result = ReadFile(stdout_read_, &ch, 1, &bytes, NULL);
+        DWORD bytes = 0;
+        BOOL result = ReadFile(stdout_read_, read_buf_,
+                               static_cast<DWORD>(READ_BUF_SIZE),
+                               &bytes, NULL);
         if (!result || bytes == 0) {
             return false;
         }
-        if (ch == '\n') {
-            break;
-        }
-        if (ch != '\r') {
-            line += ch;
-        }
-    }
+        read_buf_len_ = bytes;
 #else
-    while (true) {
-        bytes_read = read(stdout_fd_, &ch, 1);
-        if (bytes_read <= 0) {
+        ssize_t bytes = read(stdout_fd_, read_buf_, READ_BUF_SIZE);
+        if (bytes <= 0) {
             return false;
         }
-        if (ch == '\n') {
-            break;
-        }
-        if (ch != '\r') {
-            line += ch;
-        }
-    }
+        read_buf_len_ = bytes;
 #endif
-
-    return true;
+    }
 }
 
 bool WorkerProcess::WriteLine(const std::string& line) {

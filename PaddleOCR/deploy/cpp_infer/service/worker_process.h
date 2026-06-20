@@ -79,14 +79,18 @@ private:
     HANDLE process_handle_ = INVALID_HANDLE_VALUE;
     HANDLE stdin_write_ = INVALID_HANDLE_VALUE;   // Parent writes to this
     HANDLE stdout_read_ = INVALID_HANDLE_VALUE;    // Parent reads from this
-    HANDLE stdin_read_ = INVALID_HANDLE_VALUE;     // Child reads from this (closed by parent)
-    HANDLE stdout_write_ = INVALID_HANDLE_VALUE;   // Child writes to this (closed by parent)
     DWORD process_id_ = 0;
 #else
     int stdin_fd_ = -1;
     int stdout_fd_ = -1;
     pid_t process_id_ = -1;
 #endif
+
+    // Buffered reading for pipe I/O
+    static const size_t READ_BUF_SIZE = 4096;
+    char read_buf_[READ_BUF_SIZE];
+    size_t read_buf_len_ = 0;  // Valid data length in buffer
+    size_t read_buf_pos_ = 0;  // Current read position
 
     std::atomic<WorkerStatus> status_{WorkerStatus::DEAD};
     std::mutex mutex_;

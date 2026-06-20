@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <sstream>
+#include <atomic>
+#include <mutex>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -214,18 +216,20 @@ cv::Mat OCRServiceCore::DecodeImage(const std::string& image_data) {
 }
 
 std::string OCRServiceCore::SaveTempFile(const cv::Mat& image) {
-    // Create temp directory
-    std::string tmp_dir = "tmp";
-    if (access(tmp_dir.c_str(), F_OK) != 0) {
-        mkdir(tmp_dir.c_str());
-    }
+    // Create temp directory (once, thread-safe)
+    static const std::string tmp_dir = "tmp";
+    static std::once_flag dir_flag;
+    std::call_once(dir_flag, [&]() {
+        if (access(tmp_dir.c_str(), F_OK) != 0) {
+            mkdir(tmp_dir.c_str());
+        }
+    });
 
-    // Generate unique filename
-    auto now = std::chrono::system_clock::now();
-    auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now.time_since_epoch()).count();
+    // Atomic counter for unique filename (no collision)
+    static std::atomic<int64_t> file_counter{0};
+    int64_t count = file_counter.fetch_add(1);
     std::string filename = tmp_dir + "/ocr_" +
-        std::to_string(timestamp) + ".jpg";
+        std::to_string(count) + ".jpg";
 
     // Save image
     cv::imwrite(filename, image);

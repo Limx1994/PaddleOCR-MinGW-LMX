@@ -124,6 +124,14 @@ void TcpServer::HandleClient(SOCKET client_fd) {
             break;
         }
 
+        // Validate length (prevent allocation bomb)
+        static const uint32_t MAX_BODY_SIZE = 50 * 1024 * 1024;  // 50MB
+        if (header.length > MAX_BODY_SIZE) {
+            std::cerr << "Body too large: " << header.length
+                      << " bytes (max " << MAX_BODY_SIZE << ")" << std::endl;
+            break;
+        }
+
         // Receive message body
         std::vector<uint8_t> body(header.length);
         if (!RecvFull(client_fd, body.data(), header.length)) {

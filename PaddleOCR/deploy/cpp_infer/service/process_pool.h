@@ -56,8 +56,11 @@ public:
     bool IsInitialized() const { return initialized_; }
 
 private:
-    // Find an available worker
+    // Find an available worker (does NOT restart dead workers)
     int FindAvailableWorker();
+
+    // Async restart dead workers (non-blocking)
+    void AsyncRestartDeadWorkers();
 
     // Restart a specific worker
     bool RestartWorker(int index);
