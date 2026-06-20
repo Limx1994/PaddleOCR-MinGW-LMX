@@ -13,9 +13,20 @@ using json = nlohmann::json;
 struct PoolConfig {
     int pool_size = 2;              // Number of worker processes
     std::string worker_exe;         // Path to ppocr_worker.exe
-    std::string model_dir;          // Model directory
+    std::string model_dir;          // Model directory (auto-detect)
+
+    // Specific model directories (optional, override model_dir auto-detect)
+    std::string det_model_dir;
+    std::string det_model_name = "PP-OCRv4_mobile_det";
+    std::string rec_model_dir;
+    std::string rec_model_name = "PP-OCRv4_mobile_rec";
+    std::string cls_model_dir;
+    std::string cls_model_name = "PP-LCNet_x1_0_doc_ori";
+
     int cpu_threads = 8;            // CPU threads per worker
     bool use_doc_orientation = true;
+    bool use_doc_unwarping = false;
+    bool use_textline_orientation = false;
     int max_retries = 2;            // Max retries per request
 };
 

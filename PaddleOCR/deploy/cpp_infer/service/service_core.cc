@@ -62,8 +62,16 @@ bool OCRServiceCore::Init(const ServiceConfig& config) {
     PoolConfig pool_config;
     pool_config.pool_size = config_.pool_size;
     pool_config.model_dir = config_.model_dir;
+    pool_config.det_model_dir = config_.det_model_dir;
+    pool_config.det_model_name = config_.det_model_name;
+    pool_config.rec_model_dir = config_.rec_model_dir;
+    pool_config.rec_model_name = config_.rec_model_name;
+    pool_config.cls_model_dir = config_.cls_model_dir;
+    pool_config.cls_model_name = config_.cls_model_name;
     pool_config.cpu_threads = config_.cpu_threads;
     pool_config.use_doc_orientation = config_.use_doc_orientation;
+    pool_config.use_doc_unwarping = config_.use_doc_unwarping;
+    pool_config.use_textline_orientation = config_.use_textline_orientation;
 
     if (!pool_->Init(pool_config)) {
         INFOE("Failed to initialize process pool");
@@ -146,7 +154,14 @@ json OCRServiceCore::GetStatus() {
             {"host", config_.host},
             {"port", config_.port},
             {"model_dir", config_.model_dir},
+            {"det_model_dir", config_.det_model_dir},
+            {"det_model_name", config_.det_model_name},
+            {"rec_model_dir", config_.rec_model_dir},
+            {"rec_model_name", config_.rec_model_name},
+            {"cls_model_dir", config_.cls_model_dir},
+            {"cls_model_name", config_.cls_model_name},
             {"pool_size", config_.pool_size},
+            {"cpu_threads", config_.cpu_threads},
             {"use_doc_orientation", config_.use_doc_orientation},
             {"use_doc_unwarping", config_.use_doc_unwarping},
             {"use_textline_orientation", config_.use_textline_orientation},

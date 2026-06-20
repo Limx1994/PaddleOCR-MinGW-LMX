@@ -15,10 +15,18 @@ struct ServiceConfig {
     std::string host = "127.0.0.1";
     int port = 8080;
     int thread_num = 4;
+
+    // Model directory (auto-detect models)
     std::string model_dir;
+
+    // Specific model directories (optional, override model_dir auto-detect)
+    std::string det_model_dir;
     std::string det_model_name = "PP-OCRv4_mobile_det";
+    std::string rec_model_dir;
     std::string rec_model_name = "PP-OCRv4_mobile_rec";
+    std::string cls_model_dir;
     std::string cls_model_name = "PP-LCNet_x1_0_doc_ori";
+
     bool use_doc_orientation = true;
     bool use_doc_unwarping = false;
     bool use_textline_orientation = false;

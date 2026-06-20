@@ -23,7 +23,15 @@ WorkerProcess::~WorkerProcess() {
 bool WorkerProcess::Start(const std::string& worker_exe,
                           const std::string& model_dir,
                           int cpu_threads,
-                          bool use_doc_orientation) {
+                          bool use_doc_orientation,
+                          const std::string& det_model_dir,
+                          const std::string& det_model_name,
+                          const std::string& rec_model_dir,
+                          const std::string& rec_model_name,
+                          const std::string& cls_model_dir,
+                          const std::string& cls_model_name,
+                          bool use_doc_unwarping,
+                          bool use_textline_orientation) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     // Save config for restart
@@ -31,6 +39,14 @@ bool WorkerProcess::Start(const std::string& worker_exe,
     model_dir_ = model_dir;
     cpu_threads_ = cpu_threads;
     use_doc_orientation_ = use_doc_orientation;
+    use_doc_unwarping_ = use_doc_unwarping;
+    use_textline_orientation_ = use_textline_orientation;
+    det_model_dir_ = det_model_dir;
+    det_model_name_ = det_model_name;
+    rec_model_dir_ = rec_model_dir;
+    rec_model_name_ = rec_model_name;
+    cls_model_dir_ = cls_model_dir;
+    cls_model_name_ = cls_model_name;
 
     status_ = WorkerStatus::STARTING;
 
@@ -67,11 +83,31 @@ bool WorkerProcess::Start(const std::string& worker_exe,
     SetHandleInformation(stdout_read, HANDLE_FLAG_INHERIT, 0);
 
     // Build command line
-    std::string doc_ori_str = use_doc_orientation ? "true" : "false";
-    std::string cmd = "\"" + worker_exe + "\""
-                    + " --model_dir \"" + model_dir + "\""
-                    + " --cpu_threads " + std::to_string(cpu_threads)
-                    + " --use_doc_orientation " + doc_ori_str;
+    std::string cmd = "\"" + worker_exe + "\"";
+
+    // Use specific model dirs if provided, otherwise use model_dir
+    if (!det_model_dir.empty()) {
+        cmd += " --det_model_dir \"" + det_model_dir + "\"";
+        if (!det_model_name.empty()) cmd += " --det_model_name \"" + det_model_name + "\"";
+    }
+    if (!rec_model_dir.empty()) {
+        cmd += " --rec_model_dir \"" + rec_model_dir + "\"";
+        if (!rec_model_name.empty()) cmd += " --rec_model_name \"" + rec_model_name + "\"";
+    }
+    if (!cls_model_dir.empty()) {
+        cmd += " --cls_model_dir \"" + cls_model_dir + "\"";
+        if (!cls_model_name.empty()) cmd += " --cls_model_name \"" + cls_model_name + "\"";
+    }
+
+    // Always pass model_dir for auto-detection fallback
+    if (!model_dir.empty()) {
+        cmd += " --model_dir \"" + model_dir + "\"";
+    }
+
+    cmd += " --cpu_threads " + std::to_string(cpu_threads);
+    cmd += " --use_doc_orientation " + std::string(use_doc_orientation ? "true" : "false");
+    cmd += " --use_doc_unwarping " + std::string(use_doc_unwarping ? "true" : "false");
+    cmd += " --use_textline_orientation " + std::string(use_textline_orientation ? "true" : "false");
 
     // Set up startup info
     STARTUPINFOA si;
@@ -324,7 +360,9 @@ void WorkerProcess::Stop() {
 bool WorkerProcess::Restart() {
     INFO("Restarting worker PID %d", GetPid());
     Stop();
-    return Start(worker_exe_, model_dir_, cpu_threads_, use_doc_orientation_);
+    return Start(worker_exe_, model_dir_, cpu_threads_, use_doc_orientation_,
+                 det_model_dir_, det_model_name_, rec_model_dir_, rec_model_name_,
+                 cls_model_dir_, cls_model_name_, use_doc_unwarping_, use_textline_orientation_);
 }
 
 bool WorkerProcess::ReadLine(std::string& line) {

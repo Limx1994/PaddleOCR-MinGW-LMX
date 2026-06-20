@@ -42,10 +42,18 @@ std::string CaptureStdout(std::function<void()> func) {
 void PrintUsage() {
     std::cerr << "Usage: ppocr_worker [options]" << std::endl;
     std::cerr << "Options:" << std::endl;
-    std::cerr << "  --model_dir <dir>           Model directory" << std::endl;
-    std::cerr << "  --cpu_threads <num>         CPU threads (default: 8)" << std::endl;
-    std::cerr << "  --use_doc_orientation <bool> Use doc orientation (default: true)" << std::endl;
-    std::cerr << "  --help                      Show this help" << std::endl;
+    std::cerr << "  --model_dir <dir>                          Model directory (auto-detect models)" << std::endl;
+    std::cerr << "  --det_model_dir <dir>                      Detection model directory" << std::endl;
+    std::cerr << "  --det_model_name <name>                    Detection model name (default: PP-OCRv4_mobile_det)" << std::endl;
+    std::cerr << "  --rec_model_dir <dir>                      Recognition model directory" << std::endl;
+    std::cerr << "  --rec_model_name <name>                    Recognition model name (default: PP-OCRv4_mobile_rec)" << std::endl;
+    std::cerr << "  --cls_model_dir <dir>                      Classification model directory" << std::endl;
+    std::cerr << "  --cls_model_name <name>                    Classification model name (default: PP-LCNet_x1_0_doc_ori)" << std::endl;
+    std::cerr << "  --cpu_threads <num>                        CPU threads (default: 8)" << std::endl;
+    std::cerr << "  --use_doc_orientation <bool>               Use doc orientation (default: true)" << std::endl;
+    std::cerr << "  --use_doc_unwarping <bool>                 Use doc unwarping (default: false)" << std::endl;
+    std::cerr << "  --use_textline_orientation <bool>          Use textline orientation (default: false)" << std::endl;
+    std::cerr << "  --help                                     Show this help" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -54,8 +62,13 @@ int main(int argc, char* argv[]) {
 
     // Parse arguments
     std::string model_dir;
+    std::string det_model_dir, det_model_name;
+    std::string rec_model_dir, rec_model_name;
+    std::string cls_model_dir, cls_model_name;
     int cpu_threads = 8;
     bool use_doc_orientation = true;
+    bool use_doc_unwarping = false;
+    bool use_textline_orientation = false;
 
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
@@ -65,10 +78,26 @@ int main(int argc, char* argv[]) {
             return 0;
         } else if (arg == "--model_dir" && i + 1 < argc) {
             model_dir = argv[++i];
+        } else if (arg == "--det_model_dir" && i + 1 < argc) {
+            det_model_dir = argv[++i];
+        } else if (arg == "--det_model_name" && i + 1 < argc) {
+            det_model_name = argv[++i];
+        } else if (arg == "--rec_model_dir" && i + 1 < argc) {
+            rec_model_dir = argv[++i];
+        } else if (arg == "--rec_model_name" && i + 1 < argc) {
+            rec_model_name = argv[++i];
+        } else if (arg == "--cls_model_dir" && i + 1 < argc) {
+            cls_model_dir = argv[++i];
+        } else if (arg == "--cls_model_name" && i + 1 < argc) {
+            cls_model_name = argv[++i];
         } else if (arg == "--cpu_threads" && i + 1 < argc) {
             cpu_threads = std::stoi(argv[++i]);
         } else if (arg == "--use_doc_orientation" && i + 1 < argc) {
             use_doc_orientation = (std::string(argv[++i]) == "true");
+        } else if (arg == "--use_doc_unwarping" && i + 1 < argc) {
+            use_doc_unwarping = (std::string(argv[++i]) == "true");
+        } else if (arg == "--use_textline_orientation" && i + 1 < argc) {
+            use_textline_orientation = (std::string(argv[++i]) == "true");
         } else {
             std::cerr << "Unknown argument: " << arg << std::endl;
             PrintUsage();
@@ -76,43 +105,74 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if (model_dir.empty()) {
-        std::cerr << "Error: --model_dir is required" << std::endl;
+    // Auto-detect models from model_dir if specific model dirs not provided
+    struct stat st;
+    if (!model_dir.empty()) {
+        if (det_model_dir.empty()) {
+            std::string dir = model_dir + "/PP-OCRv4_mobile_det_infer";
+            if (stat(dir.c_str(), &st) == 0) {
+                det_model_dir = dir;
+                if (det_model_name.empty()) det_model_name = "PP-OCRv4_mobile_det";
+            }
+        }
+        if (rec_model_dir.empty()) {
+            std::string dir = model_dir + "/PP-OCRv4_mobile_rec_infer";
+            if (stat(dir.c_str(), &st) == 0) {
+                rec_model_dir = dir;
+                if (rec_model_name.empty()) rec_model_name = "PP-OCRv4_mobile_rec";
+            }
+        }
+        if (cls_model_dir.empty()) {
+            std::string dir = model_dir + "/PP-LCNet_x1_0_doc_ori_infer";
+            if (stat(dir.c_str(), &st) == 0) {
+                cls_model_dir = dir;
+                if (cls_model_name.empty()) cls_model_name = "PP-LCNet_x1_0_doc_ori";
+            }
+        }
+    }
+
+    // Set default model names if not specified
+    if (det_model_name.empty()) det_model_name = "PP-OCRv4_mobile_det";
+    if (rec_model_name.empty()) rec_model_name = "PP-OCRv4_mobile_rec";
+    if (cls_model_name.empty()) cls_model_name = "PP-LCNet_x1_0_doc_ori";
+
+    // Validate required models
+    if (det_model_dir.empty() || rec_model_dir.empty()) {
+        std::cerr << "Error: Detection and recognition models are required" << std::endl;
+        std::cerr << "  Use --model_dir to auto-detect, or --det_model_dir and --rec_model_dir" << std::endl;
         PrintUsage();
         return 1;
     }
 
     // Initialize PaddleOCR
     std::cerr << "[Worker] Initializing PaddleOCR..." << std::endl;
-    std::cerr << "[Worker] Model dir: " << model_dir << std::endl;
+    std::cerr << "[Worker] Det model: " << det_model_dir << " (" << det_model_name << ")" << std::endl;
+    std::cerr << "[Worker] Rec model: " << rec_model_dir << " (" << rec_model_name << ")" << std::endl;
+    if (!cls_model_dir.empty()) {
+        std::cerr << "[Worker] Cls model: " << cls_model_dir << " (" << cls_model_name << ")" << std::endl;
+    }
     std::cerr << "[Worker] CPU threads: " << cpu_threads << std::endl;
     std::cerr << "[Worker] Doc orientation: " << (use_doc_orientation ? "true" : "false") << std::endl;
+    std::cerr << "[Worker] Doc unwarping: " << (use_doc_unwarping ? "true" : "false") << std::endl;
+    std::cerr << "[Worker] Textline orientation: " << (use_textline_orientation ? "true" : "false") << std::endl;
 
     try {
         PaddleOCRParams params;
 
         // Set model paths
-        std::string det_dir = model_dir + "/PP-OCRv4_mobile_det_infer";
-        std::string rec_dir = model_dir + "/PP-OCRv4_mobile_rec_infer";
-        std::string cls_dir = model_dir + "/PP-LCNet_x1_0_doc_ori_infer";
+        params.text_detection_model_dir = det_model_dir;
+        params.text_detection_model_name = det_model_name;
+        params.text_recognition_model_dir = rec_model_dir;
+        params.text_recognition_model_name = rec_model_name;
 
-        struct stat st;
-        if (stat(det_dir.c_str(), &st) == 0) {
-            params.text_detection_model_dir = det_dir;
-            params.text_detection_model_name = "PP-OCRv4_mobile_det";
-        }
-        if (stat(rec_dir.c_str(), &st) == 0) {
-            params.text_recognition_model_dir = rec_dir;
-            params.text_recognition_model_name = "PP-OCRv4_mobile_rec";
-        }
-        if (stat(cls_dir.c_str(), &st) == 0) {
-            params.doc_orientation_classify_model_dir = cls_dir;
-            params.doc_orientation_classify_model_name = "PP-LCNet_x1_0_doc_ori";
+        if (!cls_model_dir.empty()) {
+            params.doc_orientation_classify_model_dir = cls_model_dir;
+            params.doc_orientation_classify_model_name = cls_model_name;
         }
 
         params.use_doc_orientation_classify = use_doc_orientation;
-        params.use_doc_unwarping = false;
-        params.use_textline_orientation = false;
+        params.use_doc_unwarping = use_doc_unwarping;
+        params.use_textline_orientation = use_textline_orientation;
         params.cpu_threads = cpu_threads;
         params.thread_num = 1;
 

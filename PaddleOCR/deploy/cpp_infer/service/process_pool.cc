@@ -37,7 +37,11 @@ bool ProcessPool::Init(const PoolConfig& config) {
     for (int i = 0; i < config_.pool_size; i++) {
         auto worker = std::unique_ptr<WorkerProcess>(new WorkerProcess());
         if (!worker->Start(config_.worker_exe, config_.model_dir,
-                           config_.cpu_threads, config_.use_doc_orientation)) {
+                           config_.cpu_threads, config_.use_doc_orientation,
+                           config_.det_model_dir, config_.det_model_name,
+                           config_.rec_model_dir, config_.rec_model_name,
+                           config_.cls_model_dir, config_.cls_model_name,
+                           config_.use_doc_unwarping, config_.use_textline_orientation)) {
             INFOE("Failed to start worker %d", i);
             // Continue with remaining workers
             continue;

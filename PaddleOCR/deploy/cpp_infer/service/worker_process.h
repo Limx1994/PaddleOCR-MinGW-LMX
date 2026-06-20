@@ -30,7 +30,15 @@ public:
     bool Start(const std::string& worker_exe,
                const std::string& model_dir,
                int cpu_threads,
-               bool use_doc_orientation);
+               bool use_doc_orientation,
+               const std::string& det_model_dir = "",
+               const std::string& det_model_name = "",
+               const std::string& rec_model_dir = "",
+               const std::string& rec_model_name = "",
+               const std::string& cls_model_dir = "",
+               const std::string& cls_model_name = "",
+               bool use_doc_unwarping = false,
+               bool use_textline_orientation = false);
 
     // Send OCR request (image path)
     bool SendRequest(const std::string& image_path);
@@ -88,4 +96,12 @@ private:
     std::string model_dir_;
     int cpu_threads_ = 8;
     bool use_doc_orientation_ = true;
+    bool use_doc_unwarping_ = false;
+    bool use_textline_orientation_ = false;
+    std::string det_model_dir_;
+    std::string det_model_name_;
+    std::string rec_model_dir_;
+    std::string rec_model_name_;
+    std::string cls_model_dir_;
+    std::string cls_model_name_;
 };
