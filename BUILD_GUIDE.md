@@ -179,7 +179,12 @@ ppocr.exe ocr --input test.jpg ^
 
 ```batch
 cd dist\ppocr
+
+# 自动检测 PP-OCRv4_mobile 模型
 ppocr_service.exe --model_dir ./models --port 8080 --pool_size 2
+
+# 自定义模型
+ppocr_service.exe --det_model_dir ./models/PP-OCRv4_mobile_det_infer --det_model_name PP-OCRv4_mobile_det --rec_model_dir ./models/PP-OCRv4_mobile_rec_infer --rec_model_name PP-OCRv4_mobile_rec --use_doc_orientation false --port 8080
 ```
 
 **快速检测模式（车牌场景）**：

@@ -86,7 +86,13 @@ ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
 |------|--------|------|
 | `--host` | 127.0.0.1 | 监听地址 |
 | `--port` | 8080 | 监听端口 |
-| `--model_dir` | 空 | 模型目录 |
+| `--model_dir` | 空 | 模型目录（自动检测 PP-OCRv4_mobile 模型） |
+| `--det_model_dir` | 空 | 检测模型目录（覆盖 model_dir 自动检测） |
+| `--det_model_name` | PP-OCRv4_mobile_det | 检测模型名称 |
+| `--rec_model_dir` | 空 | 识别模型目录（覆盖 model_dir 自动检测） |
+| `--rec_model_name` | PP-OCRv4_mobile_rec | 识别模型名称 |
+| `--cls_model_dir` | 空 | 分类模型目录（覆盖 model_dir 自动检测） |
+| `--cls_model_name` | PP-LCNet_x1_0_doc_ori | 分类模型名称 |
 | `--pool_size` | 2 | Worker 进程数 |
 | `--cpu_threads` | 8 | 每个 worker 的 CPU 线程数 |
 | `--use_doc_orientation` | true | 使用文档方向分类 |
@@ -205,19 +211,24 @@ client.disconnect()
 
 ## 快速检测模式（车牌场景）
 
-针对车牌识别场景，提供 YOLOv8-nano 快速检测模式，先裁剪车牌区域再进行 OCR 识别，大幅提升性能。
+针对车牌识别场景，提供 RT-DETR 快速检测模式，先裁剪车牌区域再进行 OCR 识别，大幅提升性能。
 
 ### 工作原理
 
 ```
-原图 → YOLOv8-nano 检测车牌 (~10ms) → 裁剪车牌区域 → OCR 识别 (~0.1ms)
+原图 → RT-DETR 检测车牌 (~10ms) → 裁剪车牌区域 → OCR 识别 (~0.1ms)
 ```
 
 ### 使用方法
 
 ```batch
 cd D:\tmp\tmp\dist\ppocr
-ppocr_service.exe --model_dir ./models --fast_detect yolo --plate_model ./models/plate_det.onnx
+
+# 下载 RT-DETR 车牌检测模型
+# https://huggingface.co/Topurrra/rtdetr-license-plate-detection-onnx
+
+# 启动服务（快速检测模式）
+ppocr_service.exe --model_dir ./models --fast_detect yolo --plate_model ./models/plate_rtdetr.onnx --port 8080
 ```
 
 ### 性能对比
@@ -225,16 +236,15 @@ ppocr_service.exe --model_dir ./models --fast_detect yolo --plate_model ./models
 | 方案 | 检测耗时 | 识别耗时 | 总耗时 |
 |------|---------|---------|--------|
 | 完整 OCR 流程 | ~500ms | ~1.5s | ~2s |
-| YOLO 快速检测 | ~10ms | ~0.1ms | ~10ms |
+| RT-DETR 快速检测 | ~10ms | ~0.1ms | ~10ms |
 
 ### 模型要求
 
-需要准备 YOLOv8-nano 车牌检测 ONNX 模型，可从以下来源获取：
-- 自行训练的 YOLOv8-nano 模型
-- 开源车牌检测模型（如 CCPD 数据集训练）
+需要准备 RT-DETR 车牌检测 ONNX 模型（`plate_rtdetr.onnx`），可从以下来源获取：
+- [Hugging Face - RT-DETR License Plate Detection](https://huggingface.co/Topurrra/rtdetr-license-plate-detection-onnx)
 
 模型输入：640x640 RGB 图像
-模型输出：[1, 4+num_classes, num_detections] 格式的检测结果
+模型输出：logits [1, 300, 1] + pred_boxes [1, 300, 4]
 
 ## 优势
 

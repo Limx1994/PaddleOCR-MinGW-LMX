@@ -114,9 +114,12 @@ ppocr.exe ocr --input ..\..\test_images\test.jpg ^
 服务模式支持多次 OCR 请求而无需重启进程。采用进程池架构，每个 worker 进程独立处理 OCR。
 
 ```batch
-# 静态模式
+# 静态模式（自动检测 PP-OCRv4_mobile 模型）
 cd D:\tmp\tmp\dist\ppocr
 ppocr_service.exe --model_dir ./models --port 8081 --pool_size 2
+
+# 静态模式（自定义模型）
+ppocr_service.exe --det_model_dir ./models/PP-OCRv4_mobile_det_infer --det_model_name PP-OCRv4_mobile_det --rec_model_dir ./models/PP-OCRv4_mobile_rec_infer --rec_model_name PP-OCRv4_mobile_rec --use_doc_orientation false --port 8081
 
 # DLL 模式
 cd D:\tmp\tmp\dist\ppocr_dll
@@ -319,6 +322,27 @@ build_mingw.bat
 
 - `--enable_mkldnn true` — 启用 oneDNN 加速（默认）
 - `--enable_mkldnn false` — 禁用 oneDNN，使用原生 Paddle 模式（对 mobile 模型更快）
+
+### 服务模式参数
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `--host` | 127.0.0.1 | 监听地址 |
+| `--port` | 8080 | 监听端口 |
+| `--model_dir` | 空 | 模型目录（自动检测 PP-OCRv4_mobile 模型） |
+| `--det_model_dir` | 空 | 检测模型目录（覆盖 model_dir 自动检测） |
+| `--det_model_name` | PP-OCRv4_mobile_det | 检测模型名称 |
+| `--rec_model_dir` | 空 | 识别模型目录（覆盖 model_dir 自动检测） |
+| `--rec_model_name` | PP-OCRv4_mobile_rec | 识别模型名称 |
+| `--cls_model_dir` | 空 | 分类模型目录（覆盖 model_dir 自动检测） |
+| `--cls_model_name` | PP-LCNet_x1_0_doc_ori | 分类模型名称 |
+| `--pool_size` | 2 | Worker 进程数 |
+| `--cpu_threads` | 8 | 每个 worker 的 CPU 线程数 |
+| `--use_doc_orientation` | true | 使用文档方向分类 |
+| `--use_doc_unwarping` | false | 使用文档去畸变 |
+| `--use_textline_orientation` | false | 使用文本行方向分类 |
+| `--fast_detect` | none | 快速检测模式：none, yolo |
+| `--plate_model` | 空 | 车牌检测 ONNX 模型路径 |
 
 ## 模型说明
 
